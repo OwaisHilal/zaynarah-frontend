@@ -1,0 +1,59 @@
+```
+zaynarah
+├──public
+├──src
+│   ├──api
+│   │   └──productsApi.js
+│   ├──features
+│   │   ├──cart
+│   │   │   ├──components
+│   │   │   │   └──CartItem.jsx
+│   │   │   ├──hooks
+│   │   │   │   └──cartStore.js
+│   │   │   └──pages
+│   │   │   │   └──CartPage.jsx
+│   │   ├──products
+│   │   │   ├──components
+│   │   │   │   ├──ProductCard.jsx
+│   │   │   │   ├──ProductFilters.jsx
+│   │   │   │   └──ProductGrid.jsx
+│   │   │   ├──hooks
+│   │   │   │   ├──useFilters.js
+│   │   │   │   └──useProducts.js
+│   │   │   ├──pages
+│   │   │   │   ├──ProductPage.jsx
+│   │   │   │   └──ShopPage.jsx
+│   │   │   ├──services
+│   │   │   │   └──productsApi.js
+│   │   │   ├──utils
+│   │   │   └──productsData.js
+│   │   ├──ui
+│   │   │   ├──Footer.jsx
+│   │   │   ├──Layout.jsx
+│   │   │   └──Navbar.jsx
+│   │   └──user
+│   │   │   ├──components
+│   │   │   │   ├──LoginForm.jsx
+│   │   │   │   ├──SignUpForm.jsx
+│   │   │   │   └──UserProfile.jsx
+│   │   │   ├──hooks
+│   │   │   │   └──useUser.js
+│   │   │   ├──pages
+│   │   │   │   ├──LoginPage.jsx
+│   │   │   │   ├──ProfilePage.jsx
+│   │   │   │   └──SignupPage.jsx
+│   │   │   └──services
+│   │   │   │   └──userApi.js
+│   ├──pages
+│   │   └──Home.jsx
+│   ├──App.jsx
+│   ├──Index.css
+│   └──main.jsx
+├──eslint.config.js
+├──index.html
+├──package-lock.json
+├──package.json
+├──README.md
+├──vite.config.js
+└──.gitignore
+```

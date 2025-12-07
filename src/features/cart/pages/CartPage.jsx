@@ -1,14 +1,27 @@
-// src/features/cart/pages/CartPage.jsx
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../hooks/cartStore';
 
 const ROSE_GOLD = '#B76E79';
-const LIGHT_TEXT = '#3D1F23'; // soft dark for text instead of black
+const LIGHT_TEXT = '#3D1F23';
 const LIGHT_BG = '#FFF5F5';
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQty, clearCart } = useCartStore();
+  const {
+    cart,
+    addToCart,
+    removeFromCart,
+    updateQty,
+    clearCart,
+    fetchCartFromServer,
+  } = useCartStore();
+
   const navigate = useNavigate();
+  const [updatingIds, setUpdatingIds] = useState([]); // track async updates
+
+  useEffect(() => {
+    fetchCartFromServer();
+  }, []);
 
   const safeCart = Array.isArray(cart) ? cart : [];
   const total = safeCart.reduce(
@@ -16,7 +29,15 @@ export default function CartPage() {
     0
   );
 
-  // Empty state
+  const handleUpdateQty = async (id, qty) => {
+    if (qty < 1) return;
+    setUpdatingIds((prev) => [...prev, id]);
+    await updateQty(id, qty);
+    setUpdatingIds((prev) => prev.filter((uid) => uid !== id));
+  };
+
+  const isUpdating = (id) => updatingIds.includes(id);
+
   if (!safeCart.length) {
     return (
       <main className="min-h-screen flex items-center justify-center px-6 py-24 bg-white">
@@ -33,7 +54,7 @@ export default function CartPage() {
           </p>
           <Link
             to="/shop"
-            className="inline-block px-8 py-3 rounded-full text-lg font-medium transition-colors duration-200 hover:bg-[#DCA3A7]"
+            className="inline-block px-8 py-3 rounded-full text-lg font-medium"
             style={{ background: ROSE_GOLD, color: LIGHT_TEXT }}
           >
             Browse Collection
@@ -59,9 +80,9 @@ export default function CartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Items List */}
           <section className="lg:col-span-8 space-y-6">
-            {safeCart.map((item, idx) => (
+            {safeCart.map((item) => (
               <article
-                key={(item._id || item.id) ?? idx}
+                key={item.productId}
                 className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-6 rounded-3xl transition-shadow duration-200 hover:shadow-lg"
                 style={{
                   background: LIGHT_BG,
@@ -111,12 +132,10 @@ export default function CartPage() {
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() =>
-                          updateQty(
-                            item.id ?? item._id,
-                            Math.max(1, (item.qty || 1) - 1)
-                          )
+                          handleUpdateQty(item.productId, (item.qty || 1) - 1)
                         }
-                        className="w-10 h-10 rounded-lg flex items-center justify-center text-xl font-semibold transition-colors duration-150 hover:bg-gray-100"
+                        disabled={isUpdating(item.productId)}
+                        className="w-10 h-10 rounded-lg flex items-center justify-center text-xl font-semibold transition-colors duration-150 hover:bg-gray-100 disabled:opacity-50"
                         style={{
                           border: '1px solid rgba(183,110,121,0.3)',
                           background: '#fff',
@@ -132,9 +151,10 @@ export default function CartPage() {
 
                       <button
                         onClick={() =>
-                          updateQty(item.id ?? item._id, (item.qty || 1) + 1)
+                          handleUpdateQty(item.productId, (item.qty || 1) + 1)
                         }
-                        className="w-10 h-10 rounded-lg flex items-center justify-center text-xl font-semibold transition-colors duration-150 hover:bg-[#DCA3A7]"
+                        disabled={isUpdating(item.productId)}
+                        className="w-10 h-10 rounded-lg flex items-center justify-center text-xl font-semibold transition-colors duration-150 hover:bg-[#DCA3A7] disabled:opacity-50"
                         style={{
                           background: ROSE_GOLD,
                           color: '#fff',
@@ -147,7 +167,7 @@ export default function CartPage() {
 
                     <div className="flex items-center gap-4">
                       <button
-                        onClick={() => removeFromCart(item.id ?? item._id)}
+                        onClick={() => removeFromCart(item.productId)}
                         className="text-sm text-gray-500 hover:text-gray-800 underline transition-colors duration-150"
                       >
                         Remove
@@ -209,7 +229,7 @@ export default function CartPage() {
               </button>
 
               <button
-                onClick={() => clearCart()}
+                onClick={clearCart}
                 className="w-full mt-4 py-3 rounded-xl text-sm font-medium border transition-colors duration-150 hover:border-[#DCA3A7] hover:text-[#DCA3A7]"
                 style={{
                   borderColor: 'rgba(183,110,121,0.3)',

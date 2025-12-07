@@ -12,6 +12,7 @@ import ProfilePage from './features/user/pages/ProfilePage';
 
 import { useUserStore } from './features/user/hooks/useUser';
 import CheckoutPage from './features/checkout/pages/CheckoutPage';
+import TheCraftPage from './pages/TheCraft';
 
 // Protected Route Wrapper
 function ProtectedRoute({ children }) {
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/the-craft" element={<TheCraftPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
 

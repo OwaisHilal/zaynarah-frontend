@@ -1,4 +1,6 @@
+// src/features/user/hooks/useUser.js
 import { create } from 'zustand';
+import { useCartStore } from '../../cart/hooks/cartStore';
 
 // Dummy API functions (replace with real API calls)
 const loginUserApi = async ({ email, password }) => {
@@ -22,7 +24,6 @@ const signupUserApi = async ({ name, email, password }) => {
 
 const fetchUserProfileApi = async () => {
   await new Promise((res) => setTimeout(res, 300));
-  // Example: always return same user, replace with API call
   return {
     id: 2,
     name: 'Test User',
@@ -37,33 +38,46 @@ export const useUserStore = create((set, get) => ({
   loading: false,
   error: null,
 
+  // --- login ---
   login: async (credentials) => {
     set({ loading: true, error: null });
     try {
       const user = await loginUserApi(credentials);
       set({ user, loading: false });
       localStorage.setItem('user', JSON.stringify(user));
+
+      // Merge local cart into server cart after login
+      await useCartStore.getState().mergeCartOnLogin();
     } catch (err) {
       set({ error: err.message, loading: false });
     }
   },
 
+  // --- signup ---
   signup: async (data) => {
     set({ loading: true, error: null });
     try {
       const user = await signupUserApi(data);
       set({ user, loading: false });
       localStorage.setItem('user', JSON.stringify(user));
+
+      // Merge local cart into server cart after signup
+      await useCartStore.getState().mergeCartOnLogin();
     } catch (err) {
       set({ error: err.message, loading: false });
     }
   },
 
+  // --- logout ---
   logout: () => {
     set({ user: null });
     localStorage.removeItem('user');
+
+    // Clear cart on logout
+    useCartStore.getState().clearCartOnLogout();
   },
 
+  // --- fetch profile ---
   fetchProfile: async () => {
     set({ loading: true, error: null });
     try {
@@ -75,6 +89,7 @@ export const useUserStore = create((set, get) => ({
     }
   },
 
+  // --- role checks ---
   isAdmin: () => get().user?.role === 'admin',
   isCustomer: () => get().user?.role === 'customer',
 }));

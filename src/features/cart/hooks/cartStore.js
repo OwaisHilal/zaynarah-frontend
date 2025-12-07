@@ -2,56 +2,7 @@ import { create } from 'zustand';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 
-export const useCartStore = create((set, get) => ({
-  cart: [],
-  addToCart: (item) =>
-    set((state) => {
-      // unify id from backend (_id) or frontend (id)
-      const idKey = item._id || item.id;
-      const found = state.cart.find((i) => (i._id || i.id) === idKey);
-      if (found) {
-        const newCart = state.cart.map((i) =>
-          (i._id || i.id) === idKey ? { ...i, qty: (i.qty || 1) + 1 } : i
-        );
-
-        // Try sync in background
-        syncAddToCart({ ...item, qty: (found.qty || 1) + 1 }).catch(() => {});
-
-        return { cart: newCart };
-      }
-
-      // new item
-      const newItem = { ...item, qty: 1 };
-      // attempt background sync
-      syncAddToCart(newItem).catch(() => {});
-      return { cart: [...state.cart, newItem] };
-    }),
-
-  removeFromCart: (id) =>
-    set((state) => {
-      const newCart = state.cart.filter((item) => (item._id || item.id) !== id);
-      // attempt server remove
-      syncRemoveFromCart(id).catch(() => {});
-      return { cart: newCart };
-    }),
-
-  updateQty: (id, qty) =>
-    set((state) => {
-      const newCart = state.cart.map((item) =>
-        (item._id || item.id) === id ? { ...item, qty } : item
-      );
-      // attempt server update
-      syncUpdateCartQty(id, qty).catch(() => {});
-      return { cart: newCart };
-    }),
-
-  clearCart: () => {
-    // attempt server clear
-    syncClearCart().catch(() => {});
-    return set({ cart: [] });
-  },
-}));
-
+// Utility to get auth token
 const getAuthToken = () => {
   try {
     return localStorage.getItem('token');
@@ -60,55 +11,143 @@ const getAuthToken = () => {
   }
 };
 
-const syncAddToCart = async (item) => {
-  const token = getAuthToken();
-  if (!token) return;
-  await fetch(`${API_BASE}/cart/add`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      productId: item._id || item.id,
-      quantity: item.qty || 1,
-    }),
-  });
-};
+// Calculate total cart count
+const calculateCount = (cart) =>
+  (cart || []).reduce((sum, i) => sum + (i.qty || 1), 0);
 
-const syncRemoveFromCart = async (id) => {
-  const token = getAuthToken();
-  if (!token) return;
-  // backend defines: DELETE /remove/:productId
-  await fetch(`${API_BASE}/cart/remove/${id}`, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
+export const useCartStore = create((set, get) => ({
+  cart: [],
+  cartCount: 0,
 
-const syncUpdateCartQty = async (id, qty) => {
-  const token = getAuthToken();
-  if (!token) return;
-  // backend defines: PUT /update/:productId with body { quantity }
-  await fetch(`${API_BASE}/cart/update/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ quantity: qty }),
-  });
-};
+  // Set full cart (after fetch/merge)
+  setCart: (items) => set({ cart: items, cartCount: calculateCount(items) }),
 
-const syncClearCart = async () => {
-  const token = getAuthToken();
-  if (!token) return;
-  await fetch(`${API_BASE}/cart/clear`, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-};
+  // Fetch cart from backend
+  fetchCartFromServer: async () => {
+    const token = getAuthToken();
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/cart`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const items = (data.items || []).map((i) => ({
+        productId: i.product._id,
+        title: i.product.title,
+        price: i.product.price,
+        image: i.product.image,
+        qty: i.quantity,
+      }));
+
+      set({ cart: items, cartCount: calculateCount(items) });
+      return items;
+    } catch (err) {
+      console.error('fetchCartFromServer', err);
+    }
+  },
+
+  addToCart: async (item) => {
+    const token = getAuthToken();
+    const idKey = item._id || item.id;
+
+    set((state) => {
+      const found = state.cart.find((i) => i.productId === idKey);
+      const newCart = found
+        ? state.cart.map((i) =>
+            i.productId === idKey ? { ...i, qty: i.qty + 1 } : i
+          )
+        : [...state.cart, { ...item, productId: idKey, qty: 1 }];
+      return { cart: newCart, cartCount: calculateCount(newCart) };
+    });
+
+    if (token) {
+      await fetch(`${API_BASE}/cart/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ productId: idKey, quantity: 1 }),
+      });
+    }
+  },
+
+  removeFromCart: async (id) => {
+    set((state) => {
+      const newCart = state.cart.filter((i) => i.productId !== id);
+      return { cart: newCart, cartCount: calculateCount(newCart) };
+    });
+
+    const token = getAuthToken();
+    if (token) {
+      await fetch(`${API_BASE}/cart/remove/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  },
+
+  updateQty: async (id, qty) => {
+    set((state) => {
+      const newCart = state.cart.map((i) =>
+        i.productId === id ? { ...i, qty } : i
+      );
+      return { cart: newCart, cartCount: calculateCount(newCart) };
+    });
+
+    const token = getAuthToken();
+    if (token) {
+      await fetch(`${API_BASE}/cart/update/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ quantity: qty }),
+      });
+    }
+  },
+
+  clearCart: async () => {
+    set({ cart: [], cartCount: 0 });
+    const token = getAuthToken();
+    if (token) {
+      await fetch(`${API_BASE}/cart/clear`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+  },
+
+  mergeCartOnLogin: async (clientCart) => {
+    const token = getAuthToken();
+    if (!token || !clientCart?.length) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/cart/merge`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ items: clientCart }),
+      });
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const items = (data.items || []).map((i) => ({
+        productId: i.product._id,
+        title: i.product.title,
+        price: i.product.price,
+        image: i.product.image,
+        qty: i.quantity,
+      }));
+      set({ cart: items, cartCount: calculateCount(items) });
+    } catch (err) {
+      console.error('mergeCartOnLogin', err);
+    }
+  },
+}));

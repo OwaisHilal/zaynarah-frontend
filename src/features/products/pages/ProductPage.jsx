@@ -1,3 +1,5 @@
+// src/features/products/pages/ProductPage.jsx
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchProductById } from '../services/productsApi';

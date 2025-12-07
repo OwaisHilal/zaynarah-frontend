@@ -1,23 +1,18 @@
-// src/features/checkout/services/processPayment.js
-
-// Stripe
 import { loadStripe } from '@stripe/stripe-js';
-const stripePromise = loadStripe('pk_test_XXXXXXXXXXXXXXXXXXXXXXXX'); // use your Stripe test key
+const stripePromise = loadStripe('pk_test_XXXXXXXXXXXXXXXXXXXXXXXX'); // Replace with your Stripe test key
 
 export async function processStripePayment(order) {
   const stripe = await stripePromise;
 
-  // Mock line items for Stripe Checkout
-  const lineItems = order.cartItems.map((item) => ({
+  const lineItems = order.items.map((item) => ({
     price_data: {
       currency: 'inr',
       product_data: { name: item.title || 'Product' },
-      unit_amount: (item.price || 0) * 100, // in paise
+      unit_amount: (item.price || 0) * 100,
     },
     quantity: item.qty || 1,
   }));
 
-  // Redirect to Stripe Checkout in test mode
   const { error } = await stripe.redirectToCheckout({
     lineItems,
     mode: 'payment',
@@ -31,7 +26,6 @@ export async function processStripePayment(order) {
   }
 }
 
-// Razorpay
 export async function processRazorpayPayment(order) {
   return new Promise((resolve, reject) => {
     if (!window.Razorpay) {
@@ -41,12 +35,12 @@ export async function processRazorpayPayment(order) {
     }
 
     const options = {
-      key: 'rzp_test_XXXXXXXXXXXXXXXX', // your Razorpay test key
-      amount: (order.totalAmount || 0) * 100, // in paise
+      key: 'rzp_test_XXXXXXXXXXXXXXXX', // Replace with Razorpay test key
+      amount: (order.totalAmount || 0) * 100,
       currency: 'INR',
       name: 'Zaynarah Store',
-      description: 'Test Payment',
-      order_id: 'order_' + order.id,
+      description: 'Order Payment',
+      order_id: order.razorpayOrderId || 'order_' + order.id,
       handler: function (response) {
         console.log('Razorpay success:', response);
         alert('Payment successful!');

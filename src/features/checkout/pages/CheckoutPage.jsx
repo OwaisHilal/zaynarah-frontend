@@ -1,34 +1,30 @@
-import { useState } from 'react';
+// src/features/checkout/pages/CheckoutPage.jsx
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import CheckoutSteps from '../components/CheckoutSteps';
 import AddressSelector from '../components/AddressSelector';
 import PaymentOptions from '../components/PaymentOptions';
 import OrderSummary from '../components/OrderSummary';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { motion, AnimatePresence } from 'framer-motion';
 import useCheckout from '../hooks/useCheckout';
+import usePlaceOrder from '../hooks/usePlaceOrder';
 
 export default function CheckoutPage() {
   const checkout = useCheckout();
-  const [error, setError] = useState('');
+  const { placeOrder, error } = usePlaceOrder({ checkout });
 
   const steps = ['Address', 'Payment', 'Review'];
   const stepProgress = (checkout.currentStep / steps.length) * 100;
 
+  // --- Navigation ---
   const handleNext = () => {
-    setError('');
-    if (checkout.currentStep === 1 && !checkout.selectedAddress) {
-      setError('Please select an address!');
-      return;
-    }
+    if (checkout.currentStep === 1 && !checkout.selectedAddress) return;
     checkout.nextStep();
   };
 
-  const handleBack = () => {
-    setError('');
-    checkout.prevStep();
-  };
+  const handleBack = () => checkout.prevStep();
 
+  // --- Motion for step transitions ---
   const motionProps = {
     initial: { x: 50, opacity: 0 },
     animate: { x: 0, opacity: 1 },
@@ -38,11 +34,11 @@ export default function CheckoutPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Step Progress Bar */}
+      {/* Progress Bar */}
       <div className="w-full bg-gray-200 h-2 rounded-full mb-6">
         <div
           className="h-2 rounded-full transition-all duration-300"
-          style={{ width: `${stepProgress}%`, background: '#D4AF37' }} // gold accent
+          style={{ width: `${stepProgress}%`, background: '#D4AF37' }}
         />
       </div>
 
@@ -65,15 +61,7 @@ export default function CheckoutPage() {
                     selectedAddress={checkout.selectedAddress}
                     setSelectedAddress={checkout.setSelectedAddress}
                   />
-                  {error && (
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-red-500 text-sm"
-                    >
-                      {error}
-                    </motion.p>
-                  )}
+                  {error && <p className="text-red-500 text-sm">{error}</p>}
                 </CardContent>
               </Card>
             </motion.div>
@@ -129,27 +117,7 @@ export default function CheckoutPage() {
         ) : (
           <Button
             className="bg-rose-600 hover:bg-rose-700 text-white"
-            onClick={async () => {
-              const cartItems = JSON.parse(localStorage.getItem('cart')) || [];
-              if (!cartItems.length) return alert('Your cart is empty!');
-
-              checkout.setLoading(true);
-              try {
-                const order = {
-                  address: checkout.selectedAddress,
-                  cartItems,
-                  payment: checkout.paymentMethod,
-                };
-                checkout.setOrderData(order);
-                alert('Order placed successfully!');
-                checkout.resetCheckout();
-              } catch (err) {
-                console.error(err);
-                alert('Order failed');
-              } finally {
-                checkout.setLoading(false);
-              }
-            }}
+            onClick={placeOrder}
             disabled={checkout.loading}
           >
             {checkout.loading ? 'Processing...' : 'Place Order'}

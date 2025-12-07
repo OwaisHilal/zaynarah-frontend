@@ -91,7 +91,7 @@ export default function CartPage() {
                 }}
               >
                 {/* Image */}
-                <div className="w-full sm:w-40 flex-shrink-0">
+                <div className="w-full sm:w-40 shrink-0">
                   <img
                     src={item.image || 'https://via.placeholder.com/320'}
                     alt={item.title}

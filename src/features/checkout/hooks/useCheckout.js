@@ -1,14 +1,14 @@
-// src/features/checkout/hooks/useCheckout.js
 import { useState } from 'react';
 
-export default function useCheckout(initialStep = 1) {
+export default function useCheckout(initialStep = 1, totalSteps = 3) {
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('stripe');
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 3));
+  const nextStep = () =>
+    setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
   const resetCheckout = () => {
@@ -18,6 +18,9 @@ export default function useCheckout(initialStep = 1) {
     setOrderData(null);
     setLoading(false);
   };
+
+  const isFirstStep = currentStep === 1;
+  const isLastStep = currentStep === totalSteps;
 
   return {
     currentStep,
@@ -32,5 +35,7 @@ export default function useCheckout(initialStep = 1) {
     loading,
     setLoading,
     resetCheckout,
+    isFirstStep,
+    isLastStep,
   };
 }

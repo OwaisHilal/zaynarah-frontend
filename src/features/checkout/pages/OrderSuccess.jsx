@@ -1,14 +1,7 @@
-// src/features/checkout/pages/CheckoutPage.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCheckout from '../hooks/useCheckout';
-import { useCart } from '../hooks/CartContext';
-import { createOrder } from '../services/ordersApi';
-import {
-  createStripeSession,
-  createRazorpayOrder,
-  verifyRazorpayPayment,
-} from '../services/paymentsApi';
+import usePlaceOrder from '../hooks/usePlaceOrder';
 import CheckoutSteps from '../components/CheckoutSteps';
 import CheckoutProgress from '../components/CheckoutProgress';
 import StepContent from '../components/StepContent';
@@ -16,23 +9,15 @@ import CheckoutNavigation from '../components/CheckoutNavigation';
 
 export default function CheckoutPage() {
   const checkout = useCheckout();
-  const cart = useCart();
+  const { placeOrder, error } = usePlaceOrder({ checkout });
   const navigate = useNavigate();
   const [paymentLoading, setPaymentLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const steps = ['Address', 'Payment', 'Review'];
 
   const handleNext = () => {
-    if (checkout.currentStep === 1 && !checkout.selectedAddress) {
-      setError('Please select a delivery address');
-      return;
-    }
-    if (checkout.currentStep === 2 && !checkout.paymentMethod) {
-      setError('Please select a payment method');
-      return;
-    }
-    setError('');
+    if (checkout.currentStep === 1 && !checkout.selectedAddress) return;
+    if (checkout.currentStep === 2 && !checkout.paymentMethod) return;
     checkout.nextStep();
   };
 
@@ -43,47 +28,62 @@ export default function CheckoutPage() {
     setPaymentLoading(true);
 
     try {
-      // --- 1️⃣ Create order on backend ---
-      const token = localStorage.getItem('token');
-      const orderData = {
-        items: cart.cart,
-        address: checkout.selectedAddress,
-        totalAmount: cart.cart.reduce((sum, i) => sum + i.price * i.qty, 0),
-      };
-      const order = await createOrder(orderData, token);
+      const orderRes = await placeOrder({
+        paymentMethod: checkout.paymentMethod,
+      });
+      const order = orderRes.data;
       checkout.setOrderData(order);
 
-      // --- 2️⃣ Payment handling ---
+      // Save order locally for OrderSuccess page fallback
+      localStorage.setItem('lastOrder', JSON.stringify(order));
+
+      // --- Payment logic ---
       if (checkout.paymentMethod === 'stripe') {
-        const { sessionId, publishableKey } = await createStripeSession(
-          order._id
+        const sessionRes = await fetch(
+          '/api/payments/stripe/checkout-session',
+          {
+            method: 'POST',
+            body: JSON.stringify({ orderId: order._id }),
+            headers: { 'Content-Type': 'application/json' },
+          }
         );
+        const { sessionId, publishableKey } = await sessionRes.json();
         const stripe = window.Stripe(publishableKey);
         await stripe.redirectToCheckout({ sessionId });
       } else if (checkout.paymentMethod === 'razorpay') {
-        const { paymentId, key, amount, currency } = await createRazorpayOrder(
-          order._id
-        );
+        const rpRes = await fetch('/api/payments/razorpay/order', {
+          method: 'POST',
+          body: JSON.stringify({ orderId: order._id }),
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const { paymentId, key, amount, currency } = await rpRes.json();
+
         const options = {
           key,
           amount,
           currency,
           order_id: paymentId,
+          name: 'Zaynarah Store',
+          description: 'Order Payment',
           handler: async (response) => {
-            await verifyRazorpayPayment({
-              orderId: order._id,
-              paymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature,
+            await fetch('/api/payments/razorpay/verify', {
+              method: 'POST',
+              body: JSON.stringify({
+                orderId: order._id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+              }),
+              headers: { 'Content-Type': 'application/json' },
             });
-
-            // ✅ Navigate to OrderSuccess page with order data
             navigate('/checkout/success', { state: { order } });
           },
           prefill: {
             name: checkout.selectedAddress?.name,
             email: checkout.user?.email,
           },
+          modal: { ondismiss: () => alert('Payment Cancelled') },
         };
+
         const rzp = new window.Razorpay(options);
         rzp.open();
       }
@@ -97,20 +97,13 @@ export default function CheckoutPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Progress Bar */}
       <CheckoutProgress currentStep={checkout.currentStep} steps={steps} />
-
-      {/* Step Indicator */}
       <CheckoutSteps currentStep={checkout.currentStep} />
-
-      {/* Step Content */}
       <StepContent
         currentStep={checkout.currentStep}
         checkout={checkout}
         error={error}
       />
-
-      {/* Navigation Buttons */}
       <CheckoutNavigation
         currentStep={checkout.currentStep}
         totalSteps={steps.length}

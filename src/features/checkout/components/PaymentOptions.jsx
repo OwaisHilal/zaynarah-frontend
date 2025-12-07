@@ -1,3 +1,4 @@
+// src/features/checkout/components/PaymentOptions.jsx
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';

@@ -12,6 +12,7 @@ import ProfilePage from './features/user/pages/ProfilePage';
 
 import { useUserStore } from './features/user/hooks/useUser';
 import CheckoutPage from './features/checkout/pages/CheckoutPage';
+import OrderSuccessPage from './features/checkout/pages/OrderSuccess';
 import TheCraftPage from './pages/TheCraft';
 
 // Protected Route Wrapper
@@ -37,7 +38,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
 
-          {/* Protected Route */}
+          {/* Protected Routes */}
           <Route
             path="/profile"
             element={
@@ -46,11 +47,21 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/checkout"
             element={
               <ProtectedRoute>
                 <CheckoutPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/checkout/success"
+            element={
+              <ProtectedRoute>
+                <OrderSuccessPage />
               </ProtectedRoute>
             }
           />

@@ -62,7 +62,7 @@ export default function usePlaceOrder({ checkout }) {
   };
 
   const handleStripePayment = async (order, token) => {
-    const stripeRes = await fetch('/api/payments/stripe-session', {
+    const stripeRes = await fetch('/api/payments/stripe/checkout-session', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ export default function usePlaceOrder({ checkout }) {
   };
 
   const handleRazorpayPayment = async (order, token) => {
-    const razorRes = await fetch('/api/payments/razorpay-order', {
+    const razorRes = await fetch('/api/payments/razorpay/order', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,10 +1,11 @@
+// src/features/checkout/components/CheckoutSteps.jsx
 import { cn } from '@/lib/utils';
 
 export default function CheckoutSteps({ currentStep = 1 }) {
   const steps = ['Address', 'Payment', 'Review'];
 
   return (
-    <div className="flex justify-between mb-6">
+    <div className="flex justify-between mb-6 relative">
       {steps.map((step, index) => {
         const stepNumber = index + 1;
         const isActive = stepNumber === currentStep;
@@ -30,6 +31,7 @@ export default function CheckoutSteps({ currentStep = 1 }) {
             <span className="mt-2 text-sm font-medium text-gray-700">
               {step}
             </span>
+
             {index !== steps.length - 1 && (
               <div className="absolute top-5 left-full w-full h-0.5 bg-gray-300"></div>
             )}

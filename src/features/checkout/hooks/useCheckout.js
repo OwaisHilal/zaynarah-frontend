@@ -1,3 +1,4 @@
+// src/features/checkout/hooks/useCheckout.js
 import { useState } from 'react';
 
 export default function useCheckout(initialStep = 1, totalSteps = 3) {

@@ -1,3 +1,4 @@
+// src/features/cart/hooks/cartStore.js
 import { create } from 'zustand';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
@@ -19,10 +20,8 @@ export const useCartStore = create((set, get) => ({
   cart: [],
   cartCount: 0,
 
-  // Set full cart (after fetch/merge)
   setCart: (items) => set({ cart: items, cartCount: calculateCount(items) }),
 
-  // Fetch cart from backend
   fetchCartFromServer: async () => {
     const token = getAuthToken();
     if (!token) return;

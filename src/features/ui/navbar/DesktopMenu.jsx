@@ -4,6 +4,13 @@ import CartBadge from './CartBadge';
 import UserMenu from './UserMenu';
 import { Button } from '@/components/ui/button';
 import { useUserStore } from '../../user/hooks/useUser';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 export default function DesktopMenu() {
   const { user } = useUserStore();
@@ -11,6 +18,29 @@ export default function DesktopMenu() {
   return (
     <div className="hidden md:flex items-center justify-center flex-1 gap-12">
       {/* Center Navigation */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="px-3">
+            Shop
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-40">
+          <DropdownMenuItem asChild>
+            <Link to="/shop">All</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/shop?category=shawls">Shawls</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/shop?category=scarves">Scarves</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/shop?category=accessories">Accessories</Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Other Links */}
       <NavLinks />
 
       {/* Right Icons */}

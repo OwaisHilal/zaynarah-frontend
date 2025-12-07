@@ -5,6 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
+const ROSE_GOLD = '#B76E79';
+const GOLD = '#D4AF37';
+
 // Dummy fetch function (replace with real API)
 const fetchUserAddresses = async () => {
   await new Promise((res) => setTimeout(res, 300));
@@ -43,23 +46,27 @@ export default function UserAddresses() {
     return <p className="text-center text-gray-500">Loading addresses...</p>;
 
   return (
-    <Card className="max-w-4xl mx-auto mt-8">
+    <Card className="max-w-4xl mx-auto mt-8 bg-white/95 shadow-2xl rounded-3xl">
       <CardHeader>
-        <CardTitle>Saved Addresses</CardTitle>
+        <CardTitle className="text-2xl font-semibold text-gray-900">
+          Saved Addresses
+        </CardTitle>
       </CardHeader>
+
       <CardContent className="flex flex-col gap-4">
         {addresses.map((address) => (
           <div
             key={address.id}
-            className="flex justify-between items-center p-4 border rounded-lg shadow-sm"
+            className="flex justify-between items-center p-4 border rounded-xl shadow-sm hover:shadow-md transition"
           >
             <div>
-              <p className="font-semibold">{address.label}</p>
+              <p className="font-semibold text-gray-900">{address.label}</p>
               <p className="text-gray-500 text-sm">{address.details}</p>
             </div>
             <Button
               size="sm"
               variant="destructive"
+              className="rounded-full px-4 py-1 shadow hover:shadow-lg"
               onClick={() => handleDelete(address.id)}
             >
               Delete
@@ -68,18 +75,29 @@ export default function UserAddresses() {
         ))}
 
         {/* Add New Address */}
-        <div className="flex flex-col sm:flex-row gap-2 mt-4">
+        <div className="flex flex-col sm:flex-row gap-2 mt-4 items-center">
           <Input
             placeholder="Label (Home, Office...)"
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
+            className="focus:ring-rose-600 focus:border-rose-600 transition-all"
           />
           <Input
             placeholder="Address details"
             value={newDetails}
             onChange={(e) => setNewDetails(e.target.value)}
+            className="focus:ring-rose-600 focus:border-rose-600 transition-all"
           />
-          <Button onClick={handleAddAddress}>Add</Button>
+          <Button
+            onClick={handleAddAddress}
+            className="rounded-full px-6 py-2 font-semibold shadow-lg"
+            style={{
+              background: `linear-gradient(90deg, ${ROSE_GOLD}, ${GOLD})`,
+              color: '#fff',
+            }}
+          >
+            Add
+          </Button>
         </div>
       </CardContent>
     </Card>

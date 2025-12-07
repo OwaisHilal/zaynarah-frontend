@@ -1,21 +1,20 @@
-import SignupForm from '../components/SignUpForm';
+// src/features/user/pages/SignupPage.jsx
+import SignUpForm from '../components/SignUpForm';
 
 export default function SignupPage() {
   return (
-    <main className="min-h-screen w-full bg-gray-50 px-6 pt-10">
-      <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl p-10 mx-auto">
-        {/* Header */}
-        <h1 className="text-4xl font-extrabold text-gray-900 mb-3 text-center">
+    <main className="min-h-screen w-full bg-gray-50 flex flex-col items-center justify-center px-6 py-10">
+      <div className="text-center mb-10">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-2">
           Create Your Account
         </h1>
-        <p className="text-gray-600 mb-8 text-center">
+        <p className="text-gray-600 text-lg md:text-xl">
           Sign up to get started and manage your account
         </p>
+      </div>
 
-        {/* Signup Form Container */}
-        <div className="rounded-2xl p-6 shadow-inner border border-gray-200 bg-white">
-          <SignupForm />
-        </div>
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-200 p-8">
+        <SignUpForm showHeader={false} />
       </div>
     </main>
   );

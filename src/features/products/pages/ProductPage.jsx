@@ -1,102 +1,103 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchProductById } from '../../../features/products/services/productsApi';
-import { useCartStore } from '../../cart/hooks/cartStore';
-
-const GOLD = '#D4AF37';
-const DEEP_BLACK = '#0A0A0A';
+import { fetchProductById } from '../services/productsApi';
+import ProductGallery from '../components/ProductPage/ProductGallery';
+import ProductDetails from '../components/ProductPage/ProductDetails';
+import ProductVariants from '../components/ProductPage/ProductVariants';
+import ProductActions from '../components/ProductPage/ProductActions';
+import SizeGuideModal from '../components/ProductPage/SizeGuideModal';
+import Toast from '../components/ProductPage/Toast';
+import RelatedProducts from '../components/RelatedProducts';
 
 export default function ProductPage() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [mainImage, setMainImage] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState({});
+  const [qty, setQty] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [wishlist, setWishlist] = useState(() =>
+    JSON.parse(localStorage.getItem('zaynarah_wishlist') || '[]')
+  );
+  const [toast, setToast] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
 
-  const addToCart = useCartStore((s) => s.addToCart);
-
+  // Fetch product by id
   useEffect(() => {
     const loadProduct = async () => {
+      setLoading(true);
       try {
         const p = await fetchProductById(id);
-        setProduct(p);
+        setProduct({
+          ...p,
+          images: p.images ?? (p.image ? [p.image] : []),
+          variants: p.variants ?? p.options ?? [],
+        });
+        setMainImage(p.images?.[0] ?? p.image ?? null);
       } catch (err) {
         console.error(err);
-        setProduct(null);
+      } finally {
+        setLoading(false);
       }
     };
     loadProduct();
   }, [id]);
 
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+
   if (!product)
     return (
-      <div className="text-center text-lg text-gray-400 mt-20">
+      <div className="min-h-screen flex items-center justify-center text-red-500">
         Product not found
       </div>
     );
 
   return (
-    <main className="max-w-7xl mx-auto px-6 py-20">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-        {/* ----------- PRODUCT IMAGE ----------- */}
-        <div className="flex items-center justify-center">
-          <div
-            className="rounded-3xl overflow-hidden p-2"
-            style={{
-              background: `linear-gradient(145deg, rgba(255,255,255,0.05), rgba(20,20,20,0.6))`,
-              boxShadow: `0 25px 60px rgba(0,0,0,0.35)`,
-            }}
-          >
-            <img
-              src={
-                product.images?.[0] ||
-                'https://via.placeholder.com/500?text=No+Image'
-              }
-              alt={product.title}
-              className="rounded-2xl shadow-xl w-full max-w-md object-cover"
-            />
-          </div>
-        </div>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Product Images */}
+        <ProductGallery
+          product={product}
+          mainImage={mainImage}
+          setMainImage={setMainImage}
+        />
 
-        {/* ----------- PRODUCT DETAILS ----------- */}
-        <div className="flex flex-col justify-center text-gray-100">
-          {/* Title */}
-          <h1
-            className="text-5xl font-semibold tracking-wide"
-            style={{ color: GOLD }}
-          >
-            {product.title}
-          </h1>
-
-          {/* Description */}
-          <p className="mt-6 text-lg leading-relaxed text-gray-300">
-            {product.description}
-          </p>
-
-          {/* Price */}
-          <p className="mt-8 text-4xl font-bold" style={{ color: GOLD }}>
-            ₹{product.price}
-          </p>
-
-          {/* Add to Cart Button */}
-          <button
-            onClick={() =>
-              addToCart({
-                id: product.id,
-                title: product.title,
-                price: product.price,
-                image: product.images?.[0] || null,
-              })
-            }
-            className="mt-10 px-8 py-4 rounded-2xl text-lg font-medium transition-all active:scale-95"
-            style={{
-              background: DEEP_BLACK,
-              color: '#fff',
-              boxShadow: '0 12px 30px rgba(10,10,10,0.45)',
-              border: `1px solid ${GOLD}`,
-            }}
-          >
-            Add to Cart
-          </button>
+        {/* Product Details & Actions */}
+        <div className="lg:col-span-6 space-y-6">
+          <ProductDetails product={product} />
+          <ProductVariants
+            product={product}
+            selectedVariant={selectedVariant}
+            setSelectedVariant={setSelectedVariant}
+            setShowSizeGuide={setShowSizeGuide}
+          />
+          <ProductActions
+            product={product}
+            mainImage={mainImage}
+            qty={qty}
+            setQty={setQty}
+            wishlist={wishlist}
+            setWishlist={setWishlist}
+            toast={toast}
+            setToast={setToast}
+            copied={copied}
+            setCopied={setCopied}
+          />
         </div>
       </div>
+
+      {/* Related Products */}
+      <RelatedProducts product={product} />
+
+      {/* Modals & Toasts */}
+      {showSizeGuide && <SizeGuideModal setShowSizeGuide={setShowSizeGuide} />}
+      <Toast toast={toast} copied={copied} />
     </main>
   );
 }

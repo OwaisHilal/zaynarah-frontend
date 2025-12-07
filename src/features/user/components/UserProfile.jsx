@@ -7,6 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
+const ROSE_GOLD = '#B76E79';
+const GOLD = '#D4AF37';
+
 export default function UserProfile() {
   const { user, loading, fetchProfile, logout } = useUserStore();
 
@@ -34,10 +37,8 @@ export default function UserProfile() {
     setSuccessMsg('');
 
     try {
-      // Simulate API call
-      await new Promise((res) => setTimeout(res, 500));
-      fetchProfile(); // fetch latest user info
-
+      await new Promise((res) => setTimeout(res, 500)); // simulate API
+      fetchProfile();
       setPassword('');
       setSuccessMsg('Profile updated successfully!');
     } catch (err) {
@@ -59,14 +60,20 @@ export default function UserProfile() {
     profilePic;
 
   return (
-    <Card className="max-w-2xl mx-auto">
+    <Card className="max-w-2xl mx-auto bg-white/95 shadow-2xl rounded-3xl">
       <CardHeader>
-        <CardTitle className="text-2xl text-center">User Profile</CardTitle>
+        <CardTitle className="text-3xl font-serif text-center text-gray-900 mb-2">
+          My Profile
+        </CardTitle>
+        <p className="text-center text-gray-600">
+          Manage your personal info and preferences
+        </p>
       </CardHeader>
+
       <CardContent className="flex flex-col gap-6">
         {/* Profile Picture */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <Avatar className="w-20 h-20">
+          <Avatar className="w-24 h-24 ring-2 ring-rose-600 shadow-lg">
             {profilePic ? (
               <AvatarImage src={profilePic} />
             ) : (
@@ -78,11 +85,13 @@ export default function UserProfile() {
               type="file"
               accept="image/*"
               onChange={handleProfilePicChange}
+              className="text-sm text-gray-500"
             />
             {profilePic && (
               <Button
                 variant="outline"
                 size="sm"
+                className="border-rose-600 text-rose-600 hover:bg-rose-50"
                 onClick={() => setProfilePic(null)}
               >
                 Remove
@@ -93,28 +102,34 @@ export default function UserProfile() {
 
         {/* Name */}
         <div className="flex flex-col gap-1">
-          <Label>Name</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} />
+          <Label className="text-gray-700 font-medium">Name</Label>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="focus:ring-rose-600 focus:border-rose-600 transition-all"
+          />
         </div>
 
         {/* Email */}
         <div className="flex flex-col gap-1">
-          <Label>Email</Label>
+          <Label className="text-gray-700 font-medium">Email</Label>
           <Input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="focus:ring-rose-600 focus:border-rose-600 transition-all"
           />
         </div>
 
         {/* Password */}
         <div className="flex flex-col gap-1">
-          <Label>Change Password</Label>
+          <Label className="text-gray-700 font-medium">Change Password</Label>
           <Input
             type="password"
             placeholder="New password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            className="focus:ring-rose-600 focus:border-rose-600 transition-all"
           />
           {password && password.length < 8 && (
             <p className="text-sm text-red-500">
@@ -129,6 +144,11 @@ export default function UserProfile() {
         <Button
           onClick={handleProfileUpdate}
           disabled={updateLoading || !isModified}
+          className="w-full rounded-full px-6 py-3 font-semibold shadow-lg"
+          style={{
+            background: `linear-gradient(90deg, ${ROSE_GOLD}, ${GOLD})`,
+            color: '#fff',
+          }}
         >
           {updateLoading ? 'Updating...' : 'Update Profile'}
         </Button>
@@ -137,12 +157,21 @@ export default function UserProfile() {
         {user.role === 'admin' && (
           <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
             <h3 className="font-semibold text-gray-900 mb-2">Admin Panel</h3>
-            <Button variant="outline">Go to Admin Dashboard</Button>
+            <Button
+              variant="outline"
+              className="border-rose-600 text-rose-600 hover:bg-rose-50"
+            >
+              Go to Admin Dashboard
+            </Button>
           </div>
         )}
 
         {/* Logout */}
-        <Button variant="destructive" onClick={logout}>
+        <Button
+          variant="destructive"
+          className="w-full rounded-full px-6 py-3"
+          onClick={logout}
+        >
           Logout
         </Button>
       </CardContent>

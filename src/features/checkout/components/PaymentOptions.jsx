@@ -1,4 +1,3 @@
-// src/features/checkout/components/PaymentOptions.jsx
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -44,6 +43,8 @@ export default function PaymentOptions({
             >
               <div className="flex items-center gap-3">
                 <RadioGroupItem value={method.id} className="sr-only" />
+
+                {/* Custom Radio Circle */}
                 <div
                   className={cn(
                     'w-5 h-5 flex items-center justify-center rounded-full border',
@@ -54,8 +55,10 @@ export default function PaymentOptions({
                 >
                   {isSelected && <Check className="w-3 h-3 text-white" />}
                 </div>
+
                 <span className="font-semibold">{method.label}</span>
               </div>
+
               <p className="text-sm text-gray-500 mt-2">{method.description}</p>
             </motion.label>
           );

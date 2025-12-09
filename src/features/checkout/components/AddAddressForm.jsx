@@ -18,25 +18,54 @@ export default function AddAddressForm({ onAdd, onCancel }) {
     country: 'India',
   });
 
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const validateForm = () => {
+    if (!form.fullName) return 'Full name is required';
+    if (!form.phone) return 'Phone number is required';
+    if (!form.addressLine1) return 'Address Line 1 is required';
+    if (!form.city) return 'City is required';
+    if (!form.state) return 'State is required';
+    if (!form.postalCode) return 'Pincode is required';
+    return '';
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation
-    if (
-      !form.fullName ||
-      !form.phone ||
-      !form.addressLine1 ||
-      !form.city ||
-      !form.state ||
-      !form.postalCode
-    )
+    const errorMsg = validateForm();
+    if (errorMsg) {
+      setError(errorMsg);
       return;
+    }
 
-    onAdd(form); // return full address object
+    setError('');
+    setLoading(true);
+
+    // Prepare clean address object
+    const newAddress = {
+      fullName: form.fullName.trim(),
+      phone: form.phone.trim(),
+      email: form.email.trim(),
+      addressLine1: form.addressLine1.trim(),
+      addressLine2: form.addressLine2.trim(),
+      city: form.city.trim(),
+      state: form.state.trim(),
+      postalCode: form.postalCode.trim(),
+      country: form.country,
+    };
+
+    // send to parent to trigger backend save
+    try {
+      await onAdd(newAddress);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,6 +78,8 @@ export default function AddAddressForm({ onAdd, onCancel }) {
 
       <CardContent>
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
+
           {/* Full Name */}
           <div className="flex flex-col gap-1">
             <Label>Full Name</Label>
@@ -75,7 +106,7 @@ export default function AddAddressForm({ onAdd, onCancel }) {
 
           {/* Email */}
           <div className="flex flex-col gap-1">
-            <Label>Email (optional but recommended)</Label>
+            <Label>Email (optional)</Label>
             <Input
               type="email"
               name="email"
@@ -99,10 +130,10 @@ export default function AddAddressForm({ onAdd, onCancel }) {
 
           {/* Address Line 2 */}
           <div className="flex flex-col gap-1">
-            <Label>Address Line 2</Label>
+            <Label>Address Line 2 (optional)</Label>
             <Input
               name="addressLine2"
-              placeholder="Area / Landmark (optional)"
+              placeholder="Area / Landmark"
               value={form.addressLine2}
               onChange={handleChange}
             />
@@ -150,17 +181,20 @@ export default function AddAddressForm({ onAdd, onCancel }) {
             <Input name="country" value={form.country} disabled />
           </div>
 
+          {/* Action Buttons */}
           <div className="flex gap-2 mt-2">
             <Button
               type="submit"
+              disabled={loading}
               className="flex-1 bg-rose-600 hover:bg-rose-700 text-white"
             >
-              Save Address
+              {loading ? 'Saving...' : 'Save Address'}
             </Button>
 
             <Button
               type="button"
               variant="outline"
+              disabled={loading}
               className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
               onClick={onCancel}
             >

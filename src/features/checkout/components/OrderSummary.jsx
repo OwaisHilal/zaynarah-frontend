@@ -5,12 +5,15 @@ import { useCart } from '../hooks/CartContext';
 export default function OrderSummary() {
   const { cart } = useCart() || {};
 
+  // Always keep the cart safe
   const safeCart = Array.isArray(cart) ? cart : [];
 
-  const total = safeCart.reduce(
-    (sum, item) => sum + (Number(item.qty) || 0) * (Number(item.price) || 0),
-    0
-  );
+  // Compute total price safely
+  const total = safeCart.reduce((sum, item) => {
+    const price = Number(item.price) || 0;
+    const qty = Number(item.qty) || 0;
+    return sum + price * qty;
+  }, 0);
 
   if (!safeCart.length) {
     return (
@@ -32,23 +35,27 @@ export default function OrderSummary() {
       <CardHeader>
         <h2 className="text-xl font-semibold text-rose-600">Order Summary</h2>
       </CardHeader>
+
       <CardContent className="space-y-3">
-        {safeCart.map((item) => (
-          <div
-            key={item.id || item._id}
-            className="flex justify-between text-gray-700"
-          >
-            <span>
-              {item.title || 'Untitled Product'} × {item.qty || 0}
-            </span>
-            <span className="font-semibold text-rose-600">
-              ₹
-              {(
-                (Number(item.price) || 0) * (Number(item.qty) || 0)
-              ).toLocaleString()}
-            </span>
-          </div>
-        ))}
+        {safeCart.map((item) => {
+          const price = Number(item.price) || 0;
+          const qty = Number(item.qty) || 0;
+
+          return (
+            <div
+              key={item._id || item.id}
+              className="flex justify-between text-gray-700"
+            >
+              <span>
+                {item.title || 'Untitled Product'} × {qty}
+              </span>
+
+              <span className="font-semibold text-rose-600">
+                ₹{(price * qty).toLocaleString()}
+              </span>
+            </div>
+          );
+        })}
 
         <hr className="my-3 border-gray-200" />
 

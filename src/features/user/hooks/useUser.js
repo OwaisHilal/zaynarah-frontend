@@ -2,7 +2,6 @@
 import { create } from 'zustand';
 import { useCartStore } from '../../cart/hooks/cartStore';
 
-// Dummy API functions (replace with real API calls)
 const loginUserApi = async ({ email, password }) => {
   await new Promise((res) => setTimeout(res, 500));
   if (email === 'admin@example.com' && password === 'password') {

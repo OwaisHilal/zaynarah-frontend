@@ -1,4 +1,3 @@
-// src/features/checkout/components/StepContent.jsx
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import AddressSelector from './AddressSelector';
@@ -6,17 +5,17 @@ import PaymentOptions from './PaymentOptions';
 import OrderSummary from './OrderSummary';
 
 const motionProps = {
-  initial: { x: 50, opacity: 0 },
+  initial: { x: 40, opacity: 0 },
   animate: { x: 0, opacity: 1 },
-  exit: { x: -50, opacity: 0 },
-  transition: { duration: 0.3 },
+  exit: { x: -40, opacity: 0 },
+  transition: { duration: 0.25, ease: 'easeOut' },
 };
 
-export default function StepContent({ currentStep, checkout, error }) {
+export default function StepContent({ currentStep = 1, checkout, error }) {
   return (
     <div className="mt-6 relative min-h-[300px]">
       <AnimatePresence mode="wait">
-        {/* Step 1: Address */}
+        {/* STEP 1 — ADDRESS */}
         {currentStep === 1 && (
           <motion.div key="step1" {...motionProps}>
             <Card className="shadow-sm border border-gray-200">
@@ -25,18 +24,22 @@ export default function StepContent({ currentStep, checkout, error }) {
                   Delivery Address
                 </h2>
               </CardHeader>
+
               <CardContent className="flex flex-col gap-4">
                 <AddressSelector
                   selectedAddress={checkout.selectedAddress}
                   setSelectedAddress={checkout.setSelectedAddress}
                 />
-                {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+
+                {error && (
+                  <p className="text-sm font-medium text-red-500">{error}</p>
+                )}
               </CardContent>
             </Card>
           </motion.div>
         )}
 
-        {/* Step 2: Payment */}
+        {/* STEP 2 — PAYMENT */}
         {currentStep === 2 && (
           <motion.div key="step2" {...motionProps}>
             <Card className="shadow-sm border border-gray-200">
@@ -45,17 +48,24 @@ export default function StepContent({ currentStep, checkout, error }) {
                   Payment Method
                 </h2>
               </CardHeader>
+
               <CardContent>
                 <PaymentOptions
                   selectedPayment={checkout.paymentMethod}
                   setSelectedPayment={checkout.setPaymentMethod}
                 />
+
+                {error && (
+                  <p className="text-sm font-medium text-red-500 mt-2">
+                    {error}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </motion.div>
         )}
 
-        {/* Step 3: Review / Order Summary */}
+        {/* STEP 3 — REVIEW */}
         {currentStep === 3 && (
           <motion.div key="step3" {...motionProps}>
             <OrderSummary />

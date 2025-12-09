@@ -2,35 +2,59 @@
 import { useEffect, useState } from 'react';
 import AddAddressForm from './AddAddressForm';
 import { Card, CardContent } from '@/components/ui/card';
+import { getAddresses, addAddress } from '../../user/services/userApi';
 
 export default function AddressSelector({
   selectedAddress,
   setSelectedAddress,
 }) {
   const [showAddForm, setShowAddForm] = useState(false);
-
-  // This will later be replaced by API call (userApi.getAddresses)
   const [addresses, setAddresses] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // OPTIONAL: If you want to auto-select first address on load
+  /* =============================
+      FETCH SAVED ADDRESSES
+  ============================= */
   useEffect(() => {
-    if (addresses.length && !selectedAddress) {
-      setSelectedAddress(addresses[0]);
-    }
-  }, [addresses]);
+    const loadAddresses = async () => {
+      try {
+        const data = await getAddresses();
+        setAddresses(data || []);
 
-  // When user adds new address
-  const handleAddAddress = (newAddress) => {
-    const formatted = {
-      id: Date.now(), // temporary until backend provides ID
-      ...newAddress,
+        // Auto-select the first address if none selected
+        if (data?.length && !selectedAddress) {
+          setSelectedAddress(data[0]);
+        }
+      } catch (err) {
+        console.error('Failed to load addresses', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const updated = [...addresses, formatted];
-    setAddresses(updated);
-    setSelectedAddress(formatted);
-    setShowAddForm(false);
+    loadAddresses();
+  }, []);
+
+  /* =============================
+      ADD NEW ADDRESS (API)
+  ============================= */
+  const handleAddAddress = async (newAddress) => {
+    try {
+      const saved = await addAddress(newAddress);
+
+      const updated = [...addresses, saved];
+      setAddresses(updated);
+
+      setSelectedAddress(saved);
+      setShowAddForm(false);
+    } catch (err) {
+      console.error('Failed to add address', err);
+    }
   };
+
+  if (loading) {
+    return <p className="text-gray-500 text-sm">Loading addresses...</p>;
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -38,9 +62,11 @@ export default function AddressSelector({
       {addresses.length ? (
         addresses.map((addr) => (
           <Card
-            key={addr.id}
+            key={addr._id}
             className={`cursor-pointer transition-all hover:shadow-md p-0 ${
-              selectedAddress?.id === addr.id ? 'border-2 border-rose-600' : ''
+              selectedAddress?._id === addr._id
+                ? 'border-2 border-rose-600'
+                : ''
             }`}
             onClick={() => setSelectedAddress(addr)}
           >

@@ -7,6 +7,7 @@ export default function useCheckout(initialStep = 1, totalSteps = 3) {
   const [paymentMethod, setPaymentMethod] = useState('stripe');
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null); // ← added user state
 
   const nextStep = () =>
     setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
@@ -18,6 +19,7 @@ export default function useCheckout(initialStep = 1, totalSteps = 3) {
     setPaymentMethod('stripe');
     setOrderData(null);
     setLoading(false);
+    setUser(null); // reset user
   };
 
   const isFirstStep = currentStep === 1;
@@ -38,5 +40,7 @@ export default function useCheckout(initialStep = 1, totalSteps = 3) {
     resetCheckout,
     isFirstStep,
     isLastStep,
+    user, // expose user
+    setUser, // expose setter
   };
 }

@@ -11,10 +11,11 @@ export default function CheckoutNavigation({
 }) {
   return (
     <div className="flex justify-between mt-6">
+      {/* Back Button */}
       {currentStep > 1 ? (
         <Button
           variant="outline"
-          className="border-gray-300 text-gray-700"
+          className="border-gray-300 text-gray-700 hover:bg-gray-50"
           onClick={onBack}
         >
           Back
@@ -23,12 +24,14 @@ export default function CheckoutNavigation({
         <div />
       )}
 
+      {/* Next / Place Order Button */}
       {currentStep < totalSteps ? (
         <Button
           className="bg-rose-600 hover:bg-rose-700 text-white"
           onClick={onNext}
+          disabled={loading}
         >
-          Next
+          {loading ? 'Processing...' : 'Next'}
         </Button>
       ) : (
         <Button

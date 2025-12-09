@@ -16,6 +16,7 @@ export default function StepContent({ currentStep, checkout, error }) {
   return (
     <div className="mt-6 relative min-h-[300px]">
       <AnimatePresence mode="wait">
+        {/* Step 1: Address */}
         {currentStep === 1 && (
           <motion.div key="step1" {...motionProps}>
             <Card className="shadow-sm border border-gray-200">
@@ -29,12 +30,13 @@ export default function StepContent({ currentStep, checkout, error }) {
                   selectedAddress={checkout.selectedAddress}
                   setSelectedAddress={checkout.setSelectedAddress}
                 />
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
               </CardContent>
             </Card>
           </motion.div>
         )}
 
+        {/* Step 2: Payment */}
         {currentStep === 2 && (
           <motion.div key="step2" {...motionProps}>
             <Card className="shadow-sm border border-gray-200">
@@ -53,6 +55,7 @@ export default function StepContent({ currentStep, checkout, error }) {
           </motion.div>
         )}
 
+        {/* Step 3: Review / Order Summary */}
         {currentStep === 3 && (
           <motion.div key="step3" {...motionProps}>
             <OrderSummary />

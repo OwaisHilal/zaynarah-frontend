@@ -1,14 +1,17 @@
 // src/features/checkout/pages/CheckoutPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCheckout from '../hooks/useCheckout';
 import { useCart } from '../hooks/CartContext';
+import { useUserStore } from '../../user/hooks/useUser';
+
 import { createOrder } from '../services/ordersApi';
 import {
   createStripeSession,
   createRazorpayOrder,
   verifyRazorpayPayment,
 } from '../services/paymentsApi';
+
 import CheckoutSteps from '../components/CheckoutSteps';
 import CheckoutProgress from '../components/CheckoutProgress';
 import StepContent from '../components/StepContent';
@@ -18,11 +21,20 @@ export default function CheckoutPage() {
   const checkout = useCheckout();
   const cart = useCart();
   const navigate = useNavigate();
+
+  const user = useUserStore((s) => s.user);
+
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [error, setError] = useState('');
 
   const steps = ['Address', 'Payment', 'Review'];
 
+  // Auto-load user data into checkout
+  useEffect(() => {
+    if (user) checkout.setUser(user);
+  }, [user]);
+
+  // Step validation
   const handleNext = () => {
     if (checkout.currentStep === 1 && !checkout.selectedAddress) {
       setError('Please select a delivery address');
@@ -38,79 +50,88 @@ export default function CheckoutPage() {
 
   const handleBack = () => checkout.prevStep();
 
+  // Place order + payment
   const handlePlaceOrder = async () => {
     if (!checkout.paymentMethod) return;
-    setPaymentLoading(true);
 
+    setPaymentLoading(true);
     try {
-      // --- 1️⃣ Create order on backend ---
       const token = localStorage.getItem('token');
-      const orderData = {
+
+      const orderPayload = {
         items: cart.cart,
         address: checkout.selectedAddress,
-        totalAmount: cart.cart.reduce((sum, i) => sum + i.price * i.qty, 0),
+        totalAmount: cart.cartTotal,
+        paymentMethod: checkout.paymentMethod,
+        user: user?._id,
       };
-      const order = await createOrder(orderData, token);
+
+      const order = await createOrder(orderPayload, token);
       checkout.setOrderData(order);
 
-      // --- 2️⃣ Payment handling ---
       if (checkout.paymentMethod === 'stripe') {
-        const { sessionId, publishableKey } = await createStripeSession(
-          order._id
-        );
-        const stripe = window.Stripe(publishableKey);
-        await stripe.redirectToCheckout({ sessionId });
+        await handleStripePayment(order);
       } else if (checkout.paymentMethod === 'razorpay') {
-        const { paymentId, key, amount, currency } = await createRazorpayOrder(
-          order._id
-        );
-        const options = {
-          key,
-          amount,
-          currency,
-          order_id: paymentId,
-          handler: async (response) => {
-            await verifyRazorpayPayment({
-              orderId: order._id,
-              paymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature,
-            });
-
-            // ✅ Navigate to OrderSuccess page with order data
-            navigate('/checkout/success', { state: { order } });
-          },
-          prefill: {
-            name: checkout.selectedAddress?.name,
-            email: checkout.user?.email,
-          },
-        };
-        const rzp = new window.Razorpay(options);
-        rzp.open();
+        await handleRazorpayPayment(order);
       }
     } catch (err) {
       console.error(err);
-      alert('Payment failed. Please try again.');
+      setError('Payment failed. Please try again.');
     } finally {
       setPaymentLoading(false);
     }
   };
 
+  // Stripe handler
+  const handleStripePayment = async (order) => {
+    const { sessionId, publishableKey } = await createStripeSession(order._id);
+    const stripe = window.Stripe(publishableKey);
+    await stripe.redirectToCheckout({ sessionId });
+  };
+
+  // Razorpay handler
+  const handleRazorpayPayment = async (order) => {
+    const { orderId, key, amount, currency } = await createRazorpayOrder(
+      order._id
+    );
+
+    const options = {
+      key,
+      amount,
+      currency,
+      order_id: orderId,
+      name: 'Zaynarah',
+      description: 'Order Payment',
+      handler: async (response) => {
+        await verifyRazorpayPayment({
+          orderId: order._id,
+          paymentId: response.razorpay_payment_id,
+          signature: response.razorpay_signature,
+        });
+        navigate('/checkout/success', { state: { order } });
+      },
+      prefill: {
+        name: user?.name || '',
+        email: user?.email || '',
+        contact: user?.phone || '',
+      },
+      theme: { color: '#f43f5e' },
+      method: { upi: true, card: true, netbanking: true, wallet: true },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Progress Bar */}
       <CheckoutProgress currentStep={checkout.currentStep} steps={steps} />
-
-      {/* Step Indicator */}
       <CheckoutSteps currentStep={checkout.currentStep} />
-
-      {/* Step Content */}
       <StepContent
         currentStep={checkout.currentStep}
         checkout={checkout}
         error={error}
       />
-
-      {/* Navigation Buttons */}
       <CheckoutNavigation
         currentStep={checkout.currentStep}
         totalSteps={steps.length}

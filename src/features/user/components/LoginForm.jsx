@@ -20,19 +20,27 @@ export default function LoginForm({ showHeader = true }) {
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
 
+  // Load remembered email
   useEffect(() => {
     const savedEmail = localStorage.getItem('rememberedEmail');
     if (savedEmail) setEmail(savedEmail);
   }, []);
 
+  // Redirect when user logs in
   useEffect(() => {
     if (user) navigate('/profile');
   }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await login({ email, password });
-    if (rememberMe) localStorage.setItem('rememberedEmail', email);
+
+    await login({ email, password }); // ← now calls REAL API
+
+    if (rememberMe) {
+      localStorage.setItem('rememberedEmail', email);
+    } else {
+      localStorage.removeItem('rememberedEmail');
+    }
   };
 
   return (

@@ -121,6 +121,10 @@ export const useCartStore = create((set, get) => ({
     }
   },
 
+  clearCartOnLogout: () => {
+    set({ cart: [], cartCount: 0 });
+  },
+
   mergeCartOnLogin: async (clientCart) => {
     const token = getAuthToken();
     if (!token || !clientCart?.length) return;

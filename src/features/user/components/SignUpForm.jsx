@@ -14,21 +14,28 @@ const GOLD = '#D4AF37';
 
 export default function SignUpForm({ showHeader = true }) {
   const { signup, loading, error, user } = useUserStore();
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+
   const navigate = useNavigate();
 
+  // Redirect to profile on successful signup
   useEffect(() => {
     if (user) navigate('/profile');
   }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!agreeTerms)
-      return alert('You must agree to the terms and conditions.');
+
+    if (!agreeTerms) {
+      alert('You must agree to the terms and conditions.');
+      return;
+    }
+
     await signup({ name, email, password });
   };
 
@@ -82,7 +89,7 @@ export default function SignUpForm({ showHeader = true }) {
         </button>
       </div>
 
-      {/* Agree Terms */}
+      {/* Terms */}
       <div className="flex items-center gap-2">
         <Checkbox
           id="agreeTerms"

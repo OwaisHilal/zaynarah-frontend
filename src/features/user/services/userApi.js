@@ -8,9 +8,24 @@ const getAuthHeaders = () => {
   return { Authorization: `Bearer ${token}` };
 };
 
-/* ============================
-    USER PROFILE
-============================ */
+/* ================================
+   AUTH (Login + Signup)
+================================ */
+export const loginUser = async (data) => {
+  const res = await axios.post(`${API_BASE}/auth/login`, data);
+  return res.data;
+  // expected → { token, user }
+};
+
+export const signupUser = async (data) => {
+  const res = await axios.post(`${API_BASE}/auth/register`, data);
+  return res.data;
+  // expected → { token, user }
+};
+
+/* ================================
+   USER PROFILE
+================================ */
 export const getProfile = async () => {
   const res = await axios.get(`${API_BASE}/users/profile`, {
     headers: getAuthHeaders(),
@@ -25,30 +40,28 @@ export const updateProfile = async (data) => {
   return res.data;
 };
 
-/* ============================
-    ADDRESSES
-============================ */
+/* ================================
+   ADDRESSES
+================================ */
 export const getAddresses = async () => {
   const res = await axios.get(`${API_BASE}/users/addresses`, {
     headers: getAuthHeaders(),
   });
-  return res.data; // array of addresses
+  return res.data;
 };
 
 export const addAddress = async (addressData) => {
   const res = await axios.post(`${API_BASE}/users/addresses`, addressData, {
     headers: getAuthHeaders(),
   });
-  return res.data; // new address object
+  return res.data;
 };
 
 export const updateAddress = async (id, addressData) => {
   const res = await axios.put(
     `${API_BASE}/users/addresses/${id}`,
     addressData,
-    {
-      headers: getAuthHeaders(),
-    }
+    { headers: getAuthHeaders() }
   );
   return res.data;
 };
@@ -60,9 +73,9 @@ export const deleteAddress = async (id) => {
   return res.data;
 };
 
-/* ============================
-    ORDERS FOR USER PROFILE
-============================ */
+/* ================================
+   USER ORDERS
+================================ */
 export const getMyOrders = async () => {
   const res = await axios.get(`${API_BASE}/users/my-orders`, {
     headers: getAuthHeaders(),

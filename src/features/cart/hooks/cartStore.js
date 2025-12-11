@@ -14,23 +14,32 @@ const getAuthToken = () => {
 
 // Calculate total cart count
 const calculateCount = (cart) =>
-  (cart || []).reduce((sum, i) => sum + (i.qty || 1), 0);
+  (cart || []).reduce((sum, i) => sum + (i.qty || 0), 0);
+
+// Calculate total cart price
+const calculateTotal = (cart) =>
+  (cart || []).reduce((sum, i) => sum + (i.price || 0) * (i.qty || 0), 0);
 
 export const useCartStore = create((set, get) => ({
   cart: [],
   cartCount: 0,
+  cartTotal: 0,
 
-  setCart: (items) => set({ cart: items, cartCount: calculateCount(items) }),
+  setCart: (items) => {
+    const count = calculateCount(items);
+    const total = calculateTotal(items);
+    set({ cart: items, cartCount: count, cartTotal: total });
+  },
 
   fetchCartFromServer: async () => {
     const token = getAuthToken();
-    if (!token) return;
+    if (!token) return [];
 
     try {
       const res = await fetch(`${API_BASE}/cart`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return;
+      if (!res.ok) return [];
 
       const data = await res.json();
       const items = (data.items || []).map((i) => ({
@@ -41,88 +50,120 @@ export const useCartStore = create((set, get) => ({
         qty: i.quantity,
       }));
 
-      set({ cart: items, cartCount: calculateCount(items) });
+      get().setCart(items);
       return items;
     } catch (err) {
       console.error('fetchCartFromServer', err);
+      return [];
     }
   },
 
-  addToCart: async (item) => {
+  addToCart: async (item, qty = 1) => {
     const token = getAuthToken();
-    const idKey = item._id || item.id;
+    const productId = item._id || item.id;
 
     set((state) => {
-      const found = state.cart.find((i) => i.productId === idKey);
-      const newCart = found
+      const exists = state.cart.find((i) => i.productId === productId);
+      const newCart = exists
         ? state.cart.map((i) =>
-            i.productId === idKey ? { ...i, qty: i.qty + 1 } : i
+            i.productId === productId ? { ...i, qty: i.qty + qty } : i
           )
-        : [...state.cart, { ...item, productId: idKey, qty: 1 }];
-      return { cart: newCart, cartCount: calculateCount(newCart) };
+        : [...state.cart, { ...item, productId, qty }];
+      return {
+        ...state,
+        cart: newCart,
+        cartCount: calculateCount(newCart),
+        cartTotal: calculateTotal(newCart),
+      };
     });
 
     if (token) {
-      await fetch(`${API_BASE}/cart/add`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ productId: idKey, quantity: 1 }),
-      });
+      try {
+        await fetch(`${API_BASE}/cart/add`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ productId, quantity: qty }),
+        });
+      } catch (err) {
+        console.error('addToCart API error', err);
+      }
     }
   },
 
-  removeFromCart: async (id) => {
+  removeFromCart: async (productId) => {
     set((state) => {
-      const newCart = state.cart.filter((i) => i.productId !== id);
-      return { cart: newCart, cartCount: calculateCount(newCart) };
+      const newCart = state.cart.filter((i) => i.productId !== productId);
+      return {
+        ...state,
+        cart: newCart,
+        cartCount: calculateCount(newCart),
+        cartTotal: calculateTotal(newCart),
+      };
     });
 
     const token = getAuthToken();
     if (token) {
-      await fetch(`${API_BASE}/cart/remove/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      try {
+        await fetch(`${API_BASE}/cart/remove/${productId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (err) {
+        console.error('removeFromCart API error', err);
+      }
     }
   },
 
-  updateQty: async (id, qty) => {
+  updateQty: async (productId, qty) => {
     set((state) => {
       const newCart = state.cart.map((i) =>
-        i.productId === id ? { ...i, qty } : i
+        i.productId === productId ? { ...i, qty } : i
       );
-      return { cart: newCart, cartCount: calculateCount(newCart) };
+      return {
+        ...state,
+        cart: newCart,
+        cartCount: calculateCount(newCart),
+        cartTotal: calculateTotal(newCart),
+      };
     });
 
     const token = getAuthToken();
     if (token) {
-      await fetch(`${API_BASE}/cart/update/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ quantity: qty }),
-      });
+      try {
+        await fetch(`${API_BASE}/cart/update/${productId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ quantity: qty }),
+        });
+      } catch (err) {
+        console.error('updateQty API error', err);
+      }
     }
   },
 
   clearCart: async () => {
-    set({ cart: [], cartCount: 0 });
+    set({ cart: [], cartCount: 0, cartTotal: 0 });
     const token = getAuthToken();
     if (token) {
-      await fetch(`${API_BASE}/cart/clear`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      try {
+        await fetch(`${API_BASE}/cart/clear`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (err) {
+        console.error('clearCart API error', err);
+      }
     }
   },
 
   clearCartOnLogout: () => {
-    set({ cart: [], cartCount: 0 });
+    set({ cart: [], cartCount: 0, cartTotal: 0 });
   },
 
   mergeCartOnLogin: async (clientCart) => {
@@ -148,7 +189,8 @@ export const useCartStore = create((set, get) => ({
         image: i.product.image,
         qty: i.quantity,
       }));
-      set({ cart: items, cartCount: calculateCount(items) });
+
+      get().setCart(items);
     } catch (err) {
       console.error('mergeCartOnLogin', err);
     }

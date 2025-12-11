@@ -1,3 +1,4 @@
+// src/features/checkout/components/PaymentOptions.jsx
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -42,12 +43,13 @@ export default function PaymentOptions({
               )}
             >
               <div className="flex items-center gap-3">
+                {/* Hidden Radio for accessibility */}
                 <RadioGroupItem value={method.id} className="sr-only" />
 
-                {/* Custom Radio Circle */}
+                {/* Custom Circle */}
                 <div
                   className={cn(
-                    'w-5 h-5 flex items-center justify-center rounded-full border',
+                    'w-5 h-5 flex items-center justify-center rounded-full border transition-colors',
                     isSelected
                       ? 'border-rose-600 bg-rose-600'
                       : 'border-gray-400 bg-white'

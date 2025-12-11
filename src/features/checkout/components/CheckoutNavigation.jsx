@@ -7,33 +7,48 @@ export default function CheckoutNavigation({
   onBack,
   checkout,
 }) {
-  // Disable "Next" if on payment step and payment details are missing
-  const isNextDisabled =
-    checkout.loading ||
-    (currentStep === 5 && checkout.paymentMethod && !checkout.paymentDetails);
+  const {
+    loading,
+    paymentMethod,
+    paymentDetails,
+    validatePaymentDetails,
+    placeOrder,
+  } = checkout;
 
+  // ----------------------------------------------------
+  // CONTROL: Disable "Next" on payment step if required fields missing
+  // ----------------------------------------------------
+  const isPaymentStep = currentStep === totalSteps - 0; // last step = payment review
+
+  const isNextDisabled =
+    loading || (isPaymentStep && paymentMethod && !paymentDetails); // minimal check; full validation is in SDK
+
+  // ----------------------------------------------------
+  // FINAL PLACE ORDER ACTION
+  // ----------------------------------------------------
   const handlePlaceOrder = async () => {
-    if (!checkout.paymentMethod || !checkout.paymentDetails) {
-      alert('Please select a payment method and fill payment details');
-      return;
-    }
     try {
-      await checkout.placeOrder(); // use checkout hook's placeOrder
+      // SDK-level validation → throws clean errors
+      validatePaymentDetails();
+      await placeOrder();
     } catch (err) {
       console.error(err);
-      alert(err.message || 'Failed to place order.');
+      alert(err.message || 'Unable to place order.');
     }
   };
 
+  // ----------------------------------------------------
+  // UI
+  // ----------------------------------------------------
   return (
-    <div className="flex justify-between mt-6">
+    <div className="flex justify-between mt-6 gap-4">
       {/* Back Button */}
       {currentStep > 1 ? (
         <Button
           variant="outline"
           className="border-gray-300 text-gray-700 hover:bg-gray-50"
           onClick={onBack}
-          disabled={checkout.loading}
+          disabled={loading}
         >
           Back
         </Button>
@@ -41,22 +56,22 @@ export default function CheckoutNavigation({
         <div />
       )}
 
-      {/* Next / Place Order Button */}
+      {/* Next or Place Order */}
       {currentStep < totalSteps ? (
         <Button
           className="bg-rose-600 hover:bg-rose-700 text-white"
           onClick={onNext}
           disabled={isNextDisabled}
         >
-          {checkout.loading ? 'Processing...' : 'Next'}
+          {loading ? 'Processing...' : 'Next'}
         </Button>
       ) : (
         <Button
           className="bg-rose-600 hover:bg-rose-700 text-white"
           onClick={handlePlaceOrder}
-          disabled={checkout.loading}
+          disabled={loading}
         >
-          {checkout.loading ? 'Processing...' : 'Place Order'}
+          {loading ? 'Processing...' : 'Place Order'}
         </Button>
       )}
     </div>

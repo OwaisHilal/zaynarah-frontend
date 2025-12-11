@@ -1,57 +1,32 @@
 // src/features/checkout/components/StripeCardForm.jsx
-import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useState, useEffect } from 'react';
 
 export default function StripeCardForm({ paymentDetails, setPaymentDetails }) {
-  const [cardNumber, setCardNumber] = useState(
-    paymentDetails?.cardNumber || ''
-  );
-  const [expiry, setExpiry] = useState(paymentDetails?.expiry || '');
-  const [cvc, setCvc] = useState(paymentDetails?.cvc || '');
+  const [email, setEmail] = useState(paymentDetails?.email || '');
+  const [error, setError] = useState('');
 
-  // Update parent state on change
-  const handleChange = () => {
-    setPaymentDetails({ cardNumber, expiry, cvc });
+  useEffect(() => {
+    setPaymentDetails({ email });
+  }, [email, setPaymentDetails]);
+
+  const handleChange = (e) => {
+    setEmail(e.target.value);
+    setError('');
   };
 
   return (
-    <div className="mt-4 space-y-3">
-      <Label>Card Number</Label>
+    <div className="mt-4 space-y-2">
+      <Label>Email</Label>
       <Input
-        placeholder="4242 4242 4242 4242"
-        value={cardNumber}
-        onChange={(e) => {
-          setCardNumber(e.target.value);
-          handleChange();
-        }}
+        type="email"
+        placeholder="you@example.com"
+        value={email}
+        onChange={handleChange}
+        className={error ? 'border-red-500' : ''}
       />
-
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <Label>Expiry</Label>
-          <Input
-            placeholder="MM/YY"
-            value={expiry}
-            onChange={(e) => {
-              setExpiry(e.target.value);
-              handleChange();
-            }}
-          />
-        </div>
-
-        <div className="flex-1">
-          <Label>CVC</Label>
-          <Input
-            placeholder="123"
-            value={cvc}
-            onChange={(e) => {
-              setCvc(e.target.value);
-              handleChange();
-            }}
-          />
-        </div>
-      </div>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
     </div>
   );
 }

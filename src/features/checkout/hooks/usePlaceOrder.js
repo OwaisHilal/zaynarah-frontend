@@ -1,31 +1,67 @@
 // src/features/checkout/hooks/usePlaceOrder.js
-import { useCallback } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useCallback } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 
 import {
-  finalizeCheckoutAPI,
-  createOrderDraftAPI,
-  initPaymentAPI,
-} from './useCheckoutApi';
+  placeOrderAPI,
+  createStripeSessionAPI,
+  createRazorpayOrderAPI,
+  verifyRazorpayPaymentAPI,
+} from '../services/useCheckoutApi';
 
-export default function usePlaceOrder({ checkout }) {
-  const queryClient = useQueryClient();
+export default function usePlaceOrder(checkout) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // ----------------------------------------------------
-  // PAYMENT HANDLERS
+  // VALIDATION (based on NEW production forms)
   // ----------------------------------------------------
+  const validatePaymentDetails = useCallback(() => {
+    const method = checkout.paymentMethod;
+    const details = checkout.paymentDetails || {};
 
-  // Stripe Checkout Redirect
-  const handleStripePayment = useCallback(async (payment) => {
-    const stripe = await loadStripe(payment.publishableKey);
-    if (!stripe) throw new Error('Stripe failed to load.');
-    await stripe.redirectToCheckout({ sessionId: payment.sessionId });
+    if (method === 'stripe') {
+      if (!details.email?.trim()) {
+        throw new Error('Please enter your email for Stripe payment.');
+      }
+    }
+
+    if (method === 'razorpay') {
+      if (!details.name?.trim()) {
+        throw new Error('Full name is required for Razorpay payment.');
+      }
+      if (!details.phone?.trim()) {
+        throw new Error('Phone number is required for Razorpay payment.');
+      }
+    }
+  }, [checkout.paymentMethod, checkout.paymentDetails]);
+
+  // ----------------------------------------------------
+  // STRIPE HANDLER
+  // ----------------------------------------------------
+  const handleStripe = useCallback(async (orderId) => {
+    const session = await createStripeSessionAPI(orderId);
+    if (!session?.publishableKey || !session?.sessionId) {
+      throw new Error('Stripe session missing required fields.');
+    }
+
+    const stripe = await loadStripe(session.publishableKey);
+    if (!stripe) throw new Error('Failed to load Stripe.');
+
+    await stripe.redirectToCheckout({ sessionId: session.sessionId });
   }, []);
 
-  // Razorpay Popup Window
-  const handleRazorpayPayment = useCallback(
-    async (payment) => {
+  // ----------------------------------------------------
+  // RAZORPAY HANDLER
+  // ----------------------------------------------------
+  const handleRazorpay = useCallback(async (orderId) => {
+    const payment = await createRazorpayOrderAPI(orderId);
+
+    if (!payment?.key || !payment?.orderId) {
+      throw new Error('Razorpay order missing required fields.');
+    }
+
+    return new Promise((resolve, reject) => {
       const options = {
         key: payment.key,
         amount: payment.amount,
@@ -33,97 +69,90 @@ export default function usePlaceOrder({ checkout }) {
         name: 'Zaynarah Store',
         description: 'Order Payment',
         order_id: payment.orderId,
-        handler: () => checkout.resetCheckout(),
-        modal: { ondismiss: () => alert('Payment Cancelled') },
+
+        handler: async (response) => {
+          try {
+            await verifyRazorpayPaymentAPI({
+              orderId,
+              ...response,
+            });
+            resolve(true);
+          } catch (err) {
+            reject(err);
+          }
+        },
+
+        modal: {
+          ondismiss: () => reject(new Error('Payment cancelled')),
+        },
       };
 
-      new window.Razorpay(options).open();
-    },
-    [checkout]
-  );
+      try {
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        reject(new Error('Failed to initialize Razorpay'));
+      }
+    });
+  }, []);
 
-  // Dynamic router for all future gateways
-  const gatewayHandler = useCallback(
-    async (payment, method) => {
+  // ----------------------------------------------------
+  // GATEWAY ROUTER
+  // ----------------------------------------------------
+  const triggerGateway = useCallback(
+    async (order) => {
+      const method = order.paymentMethod;
+
       switch (method) {
         case 'stripe':
-          return await handleStripePayment(payment);
+          return await handleStripe(order._id);
 
         case 'razorpay':
-          return await handleRazorpayPayment(payment);
+          return await handleRazorpay(order._id);
 
         default:
           throw new Error(`Unsupported payment method: ${method}`);
       }
     },
-    [handleStripePayment, handleRazorpayPayment]
+    [handleStripe, handleRazorpay]
   );
 
   // ----------------------------------------------------
-  // MAIN PLACE ORDER MUTATION
+  // MAIN OPERATION
   // ----------------------------------------------------
-  const placeOrderMutation = useMutation(
-    async () => {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('You must be logged in to checkout.');
+  const placeOrder = useCallback(
+    async ({ cart, cartTotal }) => {
+      setIsLoading(true);
+      setError(null);
 
-      const {
-        checkoutSessionId,
-        shippingAddress,
-        billingAddress,
-        shippingMethod,
-        paymentMethod,
-      } = checkout;
+      try {
+        // 1. Validate payment details
+        validatePaymentDetails();
 
-      // 1️⃣ Finalize checkout (confirms totals & locks price)
-      const checkoutSession = await finalizeCheckoutAPI({
-        token,
-        checkoutSessionId,
-        shippingAddress,
-        billingAddress: billingAddress || shippingAddress,
-        shippingMethod,
-      });
+        // 2. Build checkout payload
+        const payload = checkout.buildCheckoutPayload({ cart, cartTotal });
 
-      if (!checkoutSession.totalAmount) {
-        throw new Error('Failed to lock final price.');
+        // 3. Create order (Pending)
+        const order = await placeOrderAPI(payload);
+        checkout.setOrderData(order);
+
+        // 4. Start correct payment flow
+        await triggerGateway(order);
+
+        return order;
+      } catch (err) {
+        const message =
+          err?.message ||
+          err?.response?.data?.message ||
+          'Failed to place order.';
+        setError(message);
+        throw new Error(message);
+      } finally {
+        setIsLoading(false);
       }
-
-      // 2️⃣ Create draft order
-      const order = await createOrderDraftAPI({
-        token,
-        checkoutSessionId: checkoutSession.checkoutSessionId,
-        paymentGateway: paymentMethod,
-      });
-
-      checkout.setOrderData(order);
-
-      // 3️⃣ Initialize selected payment gateway
-      const payment = await initPaymentAPI({
-        token,
-        orderId: order._id,
-        gateway: paymentMethod,
-      });
-
-      // 4️⃣ Route payment to correct gateway handler
-      await gatewayHandler(payment, paymentMethod);
-
-      return order;
     },
-
-    // ----------------------------------------------------
-    // MUTATION CALLBACKS
-    // ----------------------------------------------------
-    {
-      onSuccess: () => queryClient.invalidateQueries(['cart']),
-      onError: (err) =>
-        alert(err.message || 'Something went wrong during checkout.'),
-    }
+    [checkout, validatePaymentDetails, triggerGateway]
   );
 
-  return {
-    placeOrder: placeOrderMutation.mutateAsync,
-    isLoading: placeOrderMutation.isLoading,
-    isError: placeOrderMutation.isError,
-    error: placeOrderMutation.error,
-  };
+  return { placeOrder, isLoading, error };
 }

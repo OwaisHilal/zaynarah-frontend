@@ -1,68 +1,49 @@
 // src/features/checkout/components/RazorpayForm.jsx
-import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useState, useEffect } from 'react';
 
 export default function RazorpayForm({ paymentDetails, setPaymentDetails }) {
-  const [upiId, setUpiId] = useState(paymentDetails?.upiId || '');
-  const [cardNumber, setCardNumber] = useState(
-    paymentDetails?.cardNumber || ''
-  );
-  const [expiry, setExpiry] = useState(paymentDetails?.expiry || '');
-  const [cvc, setCvc] = useState(paymentDetails?.cvc || '');
+  const [name, setName] = useState(paymentDetails?.name || '');
+  const [phone, setPhone] = useState(paymentDetails?.phone || '');
+  const [errors, setErrors] = useState({ name: '', phone: '' });
 
-  const handleChange = () => {
-    setPaymentDetails({ upiId, cardNumber, expiry, cvc });
+  useEffect(() => {
+    setPaymentDetails({ name, phone });
+  }, [name, phone, setPaymentDetails]);
+
+  const handleNameChange = (e) => {
+    setName(e.target.value);
+    setErrors((prev) => ({ ...prev, name: '' }));
+  };
+
+  const handlePhoneChange = (e) => {
+    setPhone(e.target.value);
+    setErrors((prev) => ({ ...prev, phone: '' }));
   };
 
   return (
-    <div className="mt-4 space-y-3">
-      <Label>UPI ID</Label>
-      <Input
-        placeholder="example@upi"
-        value={upiId}
-        onChange={(e) => {
-          setUpiId(e.target.value);
-          handleChange();
-        }}
-      />
+    <div className="mt-4 space-y-4">
+      <div>
+        <Label>Name</Label>
+        <Input
+          placeholder="Your full name"
+          value={name}
+          onChange={handleNameChange}
+          className={errors.name ? 'border-red-500' : ''}
+        />
+        {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+      </div>
 
-      <p className="text-sm text-gray-500">Or enter card details:</p>
-
-      <Label>Card Number</Label>
-      <Input
-        placeholder="4242 4242 4242 4242"
-        value={cardNumber}
-        onChange={(e) => {
-          setCardNumber(e.target.value);
-          handleChange();
-        }}
-      />
-
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <Label>Expiry</Label>
-          <Input
-            placeholder="MM/YY"
-            value={expiry}
-            onChange={(e) => {
-              setExpiry(e.target.value);
-              handleChange();
-            }}
-          />
-        </div>
-
-        <div className="flex-1">
-          <Label>CVC</Label>
-          <Input
-            placeholder="123"
-            value={cvc}
-            onChange={(e) => {
-              setCvc(e.target.value);
-              handleChange();
-            }}
-          />
-        </div>
+      <div>
+        <Label>Phone</Label>
+        <Input
+          placeholder="+91 9876543210"
+          value={phone}
+          onChange={handlePhoneChange}
+          className={errors.phone ? 'border-red-500' : ''}
+        />
+        {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
       </div>
     </div>
   );

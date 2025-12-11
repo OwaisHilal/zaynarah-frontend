@@ -13,60 +13,73 @@ const CartContext = createContext();
 export const CartProvider = ({ children }) => {
   const cartStore = useCartStore();
 
-  // --- Derived values ---
-  const cartTotal = useMemo(
-    () => cartStore.cart.reduce((sum, item) => sum + item.price * item.qty, 0),
-    [cartStore.cart]
-  );
+  const cartTotal = useMemo(() => {
+    return cartStore.cart.reduce((sum, item) => {
+      const price = Number(item.price) || 0;
+      const qty = Number(item.qty) || 0;
+      return sum + price * qty;
+    }, 0);
+  }, [cartStore.cart]);
 
-  const cartCount = useMemo(
-    () => cartStore.cart.reduce((sum, item) => sum + item.qty, 0),
-    [cartStore.cart]
-  );
+  const cartCount = useMemo(() => {
+    return cartStore.cart.reduce(
+      (sum, item) => sum + (Number(item.qty) || 0),
+      0
+    );
+  }, [cartStore.cart]);
 
-  // --- Server-side checkout session ID ---
+  const hasItems = cartStore.cart.length > 0;
+
   const [checkoutSessionId, setCheckoutSessionId] = useState(null);
 
-  // --- Gateway specific amounts ---
-  const getRazorpayAmount = () => Math.round(cartTotal * 100); // paisa
-  const getStripeAmount = () => Math.round(cartTotal * 100); // cents
-
-  // --- Initialize checkout session on backend ---
   const initCheckoutSession = useCallback(async (token) => {
     if (!token)
       throw new Error('User must be logged in to initialize checkout session.');
 
-    const res = await fetch('/api/checkout/session/init', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      const res = await fetch('/api/checkout/session/init', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!data.checkoutSessionId)
-      throw new Error('Failed to create checkout session.');
+      if (!data.checkoutSessionId)
+        throw new Error('Failed to create checkout session.');
 
-    setCheckoutSessionId(data.checkoutSessionId);
-    return data;
+      setCheckoutSessionId(data.checkoutSessionId);
+      return data;
+    } catch (err) {
+      console.error('Checkout session init failed:', err);
+      throw err;
+    }
   }, []);
 
-  // --- Reset cart & session ---
   const resetCheckoutSession = useCallback(() => {
     setCheckoutSessionId(null);
     cartStore.clearCart();
   }, [cartStore]);
 
+  const getRazorpayAmount = useCallback(
+    () => Math.round(cartTotal * 100),
+    [cartTotal]
+  );
+  const getStripeAmount = useCallback(
+    () => Math.round(cartTotal * 100),
+    [cartTotal]
+  );
+
   const value = {
     ...cartStore,
     cartTotal,
     cartCount,
-    getRazorpayAmount,
-    getStripeAmount,
-    hasItems: cartStore.cart.length > 0,
+    hasItems,
     checkoutSessionId,
     setCheckoutSessionId,
     initCheckoutSession,
     resetCheckoutSession,
+    getRazorpayAmount,
+    getStripeAmount,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

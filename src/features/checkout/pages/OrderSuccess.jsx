@@ -1,117 +1,113 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useCheckout from '../hooks/useCheckout';
-import usePlaceOrder from '../hooks/usePlaceOrder';
-import CheckoutSteps from '../components/CheckoutSteps';
-import CheckoutProgress from '../components/CheckoutProgress';
-import StepContent from '../components/StepContent';
-import CheckoutNavigation from '../components/CheckoutNavigation';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { formatCurrency } from '../utils/checkoutHelpers';
 
-export default function CheckoutPage() {
-  const checkout = useCheckout();
-  const { placeOrder, error } = usePlaceOrder({ checkout });
+export default function OrderSuccess() {
+  const location = useLocation();
   const navigate = useNavigate();
-  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [order, setOrder] = useState(null);
 
-  const steps = ['Address', 'Payment', 'Review'];
-
-  const handleNext = () => {
-    if (checkout.currentStep === 1 && !checkout.selectedAddress) return;
-    if (checkout.currentStep === 2 && !checkout.paymentMethod) return;
-    checkout.nextStep();
-  };
-
-  const handleBack = () => checkout.prevStep();
-
-  const handlePlaceOrder = async () => {
-    if (!checkout.paymentMethod) return;
-    setPaymentLoading(true);
-
-    try {
-      const orderRes = await placeOrder({
-        paymentMethod: checkout.paymentMethod,
-      });
-      const order = orderRes.data;
-      checkout.setOrderData(order);
-
-      // Save order locally for OrderSuccess page fallback
-      localStorage.setItem('lastOrder', JSON.stringify(order));
-
-      // --- Payment logic ---
-      if (checkout.paymentMethod === 'stripe') {
-        const sessionRes = await fetch(
-          '/api/payments/stripe/checkout-session',
-          {
-            method: 'POST',
-            body: JSON.stringify({ orderId: order._id }),
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-        const { sessionId, publishableKey } = await sessionRes.json();
-        const stripe = window.Stripe(publishableKey);
-        await stripe.redirectToCheckout({ sessionId });
-      } else if (checkout.paymentMethod === 'razorpay') {
-        const rpRes = await fetch('/api/payments/razorpay/order', {
-          method: 'POST',
-          body: JSON.stringify({ orderId: order._id }),
-          headers: { 'Content-Type': 'application/json' },
-        });
-        const { paymentId, key, amount, currency } = await rpRes.json();
-
-        const options = {
-          key,
-          amount,
-          currency,
-          order_id: paymentId,
-          name: 'Zaynarah Store',
-          description: 'Order Payment',
-          handler: async (response) => {
-            await fetch('/api/payments/razorpay/verify', {
-              method: 'POST',
-              body: JSON.stringify({
-                orderId: order._id,
-                paymentId: response.razorpay_payment_id,
-                signature: response.razorpay_signature,
-              }),
-              headers: { 'Content-Type': 'application/json' },
-            });
-            navigate('/checkout/success', { state: { order } });
-          },
-          prefill: {
-            name: checkout.selectedAddress?.name,
-            email: checkout.user?.email,
-          },
-          modal: { ondismiss: () => alert('Payment Cancelled') },
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Payment failed. Please try again.');
-    } finally {
-      setPaymentLoading(false);
+  useEffect(() => {
+    // 1. Prefer order passed via navigate state
+    if (location.state?.order) {
+      setOrder(location.state.order);
+      return;
     }
-  };
+
+    // 2. Fallback from localStorage (Stripe redirect)
+    const savedOrder = localStorage.getItem('lastOrder');
+    if (savedOrder) {
+      setOrder(JSON.parse(savedOrder));
+    }
+  }, [location.state]);
+
+  if (!order) {
+    return (
+      <div className="max-w-3xl mx-auto p-6">
+        <Card className="shadow-lg border border-yellow-500 mt-6">
+          <CardHeader>
+            <h2 className="text-2xl font-bold text-yellow-600">
+              No Order Found
+            </h2>
+          </CardHeader>
+          <CardContent className="text-center flex flex-col gap-4">
+            <p className="text-gray-700">
+              We could not find your order details. Please check your orders
+              page or contact support.
+            </p>
+
+            <Button
+              className="bg-rose-600 hover:bg-rose-700 text-white"
+              onClick={() => navigate('/shop')}
+            >
+              Go to Shop
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <CheckoutProgress currentStep={checkout.currentStep} steps={steps} />
-      <CheckoutSteps currentStep={checkout.currentStep} />
-      <StepContent
-        currentStep={checkout.currentStep}
-        checkout={checkout}
-        error={error}
-      />
-      <CheckoutNavigation
-        currentStep={checkout.currentStep}
-        totalSteps={steps.length}
-        onNext={handleNext}
-        onBack={handleBack}
-        onPlaceOrder={handlePlaceOrder}
-        loading={checkout.loading || paymentLoading}
-      />
+    <div className="max-w-3xl mx-auto p-6">
+      <Card className="shadow-lg border border-green-500 mt-6">
+        <CardHeader>
+          <h2 className="text-2xl font-bold text-green-600">
+            🎉 Order Placed Successfully!
+          </h2>
+        </CardHeader>
+
+        <CardContent className="flex flex-col gap-4 text-center">
+          <p className="text-gray-700">
+            Thank you for shopping with{' '}
+            <span className="font-semibold">Zaynarah</span>. Your order has been
+            confirmed.
+          </p>
+
+          <div className="bg-gray-100 rounded-md p-4 text-left border border-gray-300">
+            <p>
+              <span className="font-semibold">Order ID:</span> {order._id}
+            </p>
+            <p>
+              <span className="font-semibold">Total:</span>{' '}
+              {formatCurrency(order.total)}
+            </p>
+            <p>
+              <span className="font-semibold">Payment Method:</span>{' '}
+              {order.paymentMethod?.toUpperCase()}
+            </p>
+            <p>
+              <span className="font-semibold">Status:</span>{' '}
+              {order.status || 'Pending'}
+            </p>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 justify-center mt-6">
+            <Button
+              onClick={() => navigate('/orders')}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              View Orders
+            </Button>
+
+            <Button
+              onClick={() => navigate('/shop')}
+              className="bg-rose-600 hover:bg-rose-700 text-white"
+            >
+              Continue Shopping
+            </Button>
+
+            <Button
+              onClick={() => navigate('/')}
+              className="bg-gray-600 hover:bg-gray-700 text-white"
+            >
+              Go to Home
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

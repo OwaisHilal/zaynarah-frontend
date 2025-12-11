@@ -1,3 +1,4 @@
+// src/features/checkout/components/StepContent.jsx
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
@@ -81,7 +82,7 @@ export default function StepContent({ currentStep = 1, checkout, error }) {
           </motion.div>
         )}
 
-        {/* STEP 4 — PAYMENT GATEWAY */}
+        {/* STEP 4 — PAYMENT METHOD */}
         {currentStep === 4 && (
           <motion.div key="step4" {...motionProps}>
             <Card className="shadow-sm border border-gray-200">
@@ -95,7 +96,7 @@ export default function StepContent({ currentStep = 1, checkout, error }) {
                   selectedPayment={checkout.paymentMethod}
                   setSelectedPayment={(method) => {
                     checkout.setPaymentMethod(method);
-                    checkout.setPaymentDetails(null);
+                    checkout.setPaymentDetails(null); // clear previous form data
                   }}
                 />
                 {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
@@ -120,24 +121,27 @@ export default function StepContent({ currentStep = 1, checkout, error }) {
                     setPaymentDetails={checkout.setPaymentDetails}
                   />
                 )}
+
                 {checkout.paymentMethod === 'razorpay' && (
                   <RazorpayForm
                     paymentDetails={checkout.paymentDetails}
                     setPaymentDetails={checkout.setPaymentDetails}
                   />
                 )}
+
                 {!checkout.paymentDetails && (
                   <p className="text-sm text-gray-500 mt-2">
                     Enter your payment details above to continue.
                   </p>
                 )}
+
                 {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
               </CardContent>
             </Card>
           </motion.div>
         )}
 
-        {/* STEP 6 — ORDER REVIEW */}
+        {/* STEP 6 — REVIEW */}
         {currentStep === 6 && (
           <motion.div key="step6" {...motionProps}>
             <OrderSummary checkout={checkout} />

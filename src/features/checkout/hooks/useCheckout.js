@@ -1,19 +1,20 @@
 // src/features/checkout/hooks/useCheckout.js
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useCart } from './CartContext';
 import {
-  useCreateOrder,
-  useCreateStripeSession,
-  useCreateRazorpayOrder,
-  useVerifyRazorpayPayment,
+  placeOrderAPI,
+  createStripeSessionAPI,
+  createRazorpayOrderAPI,
+  verifyRazorpayPaymentAPI,
 } from '../services/useCheckoutApi';
+import { startPayment } from './usePaymentHandler';
 
 export default function useCheckout(initialStep = 1, totalSteps = 6) {
   const { checkoutSessionId, setCheckoutSessionId } = useCart();
 
-  // ------------------------
-  // Local step states
-  // ------------------------
+  // ----------------------------------------------------
+  // STATE
+  // ----------------------------------------------------
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [shippingAddress, setShippingAddress] = useState(null);
   const [billingAddress, setBillingAddress] = useState(null);
@@ -22,90 +23,132 @@ export default function useCheckout(initialStep = 1, totalSteps = 6) {
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [orderData, setOrderData] = useState(null);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // ------------------------
-  // React Query hooks (Phase 1 → only prepared, not executed)
-  // ------------------------
-  const createOrderMutation = useCreateOrder();
-  const stripeSessionMutation = useCreateStripeSession();
-  const razorpayOrderMutation = useCreateRazorpayOrder();
-  const verifyRazorpayMutation = useVerifyRazorpayPayment();
-
-  // ------------------------
-  // Step validation
-  // ------------------------
-  const validateStep = (step = currentStep) => {
-    switch (step) {
-      case 2:
-        if (!shippingAddress) return 'Please select a shipping address.';
-        break;
-      case 3:
-        if (!billingAddress) return 'Please select a billing address.';
-        break;
-      case 4:
-        if (!shippingMethod) return 'Please select a shipping method.';
-        break;
-      case 5:
-        if (!paymentMethod) return 'Please select a payment method.';
-        if (!paymentDetails) return 'Please fill in your payment details.';
-        break;
-      default:
-        return null;
-    }
-    return null;
-  };
-
-  // ------------------------
-  // Navigation
-  // ------------------------
-  const nextStep = () => {
-    const error = validateStep(currentStep);
-    if (error) {
-      alert(error);
-      return;
-    }
-    setCurrentStep((s) => Math.min(s + 1, totalSteps));
-  };
-
-  const prevStep = () => {
-    setCurrentStep((s) => Math.max(s - 1, 1));
-  };
-
-  // ------------------------
-  // Phase 1: Only BUILD the order payload
-  // (Actual payments handled in Phase 2)
-  // ------------------------
-  const buildCheckoutPayload = (cart, cartTotal) => {
-    if (!cart?.length) throw new Error('Cart is empty');
-    if (!paymentMethod || !paymentDetails)
-      throw new Error('Payment details missing');
-
-    return {
-      items: cart,
-      totalAmount: cartTotal,
+  // ----------------------------------------------------
+  // VALIDATION PER STEP
+  // ----------------------------------------------------
+  const validateStep = useCallback(
+    (step = currentStep) => {
+      switch (step) {
+        case 2:
+          if (!shippingAddress) return 'Please select a shipping address.';
+          break;
+        case 3:
+          if (!billingAddress) return 'Please select a billing address.';
+          break;
+        case 4:
+          if (!shippingMethod) return 'Please select a shipping method.';
+          break;
+        case 5:
+          if (!paymentMethod) return 'Please select a payment method.';
+          if (!paymentDetails) return 'Please fill in your payment details.';
+          break;
+        default:
+          return null;
+      }
+      return null;
+    },
+    [
+      currentStep,
       shippingAddress,
-      billingAddress: billingAddress || shippingAddress,
+      billingAddress,
       shippingMethod,
       paymentMethod,
       paymentDetails,
-      user: user?._id,
-    };
-  };
+    ]
+  );
 
-  // ------------------------
-  // Phase 1: Prepare the order (API call optional)
-  // This returns the order but does NOT trigger payment UI.
-  // ------------------------
-  const createOrder = async (checkoutPayload) => {
-    const order = await createOrderMutation.mutateAsync(checkoutPayload);
-    setOrderData(order);
-    return order;
-  };
+  const isNextDisabled = useCallback(() => !!validateStep(), [validateStep]);
 
-  // ------------------------
-  // Reset checkout
-  // ------------------------
-  const resetCheckout = () => {
+  // ----------------------------------------------------
+  // STEP NAVIGATION
+  // ----------------------------------------------------
+  const nextStep = useCallback(() => {
+    const err = validateStep();
+    if (err) return alert(err);
+    setCurrentStep((s) => Math.min(s + 1, totalSteps));
+  }, [validateStep, totalSteps]);
+
+  const prevStep = useCallback(
+    () => setCurrentStep((s) => Math.max(s - 1, 1)),
+    []
+  );
+
+  // ----------------------------------------------------
+  // BUILD CHECKOUT PAYLOAD
+  //        ----------------------------------------------------
+  const buildCheckoutPayload = useCallback(
+    ({ cart, cartTotal }) => {
+      if (!cart?.length) throw new Error('Your cart is empty.');
+
+      return {
+        cart,
+        cartTotal,
+        user,
+        shippingAddress,
+        billingAddress: billingAddress || shippingAddress,
+        shippingMethod,
+        paymentMethod,
+        paymentDetails,
+      };
+    },
+    [
+      user,
+      shippingAddress,
+      billingAddress,
+      shippingMethod,
+      paymentMethod,
+      paymentDetails,
+    ]
+  );
+
+  // ----------------------------------------------------
+  // PLACE ORDER + PAYMENT FLOW
+  // ----------------------------------------------------
+  const placeOrder = useCallback(
+    async ({ cart, cartTotal }) => {
+      setLoading(true);
+      try {
+        // 1️⃣ Validate current step / details
+        const err = validateStep();
+        if (err) throw new Error(err);
+
+        // 2️⃣ Build order payload
+        const payload = buildCheckoutPayload({ cart, cartTotal });
+
+        // 3️⃣ Create order via API
+        const order = await placeOrderAPI(payload);
+        setOrderData(order);
+
+        // 4️⃣ Start payment gateway if applicable
+        if (paymentMethod && order._id) {
+          if (paymentMethod === 'stripe') {
+            const session = await createStripeSessionAPI(order._id);
+            await startPayment('stripe', session);
+          }
+
+          if (paymentMethod === 'razorpay') {
+            const razorOrder = await createRazorpayOrderAPI(order._id);
+            await startPayment('razorpay', razorOrder);
+          }
+        }
+
+        return order;
+      } catch (err) {
+        console.error('Checkout error:', err);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [validateStep, buildCheckoutPayload, paymentMethod]
+  );
+
+  // ----------------------------------------------------
+  // RESET CHECKOUT
+  // ----------------------------------------------------
+  const resetCheckout = useCallback(() => {
     setCurrentStep(1);
     setShippingAddress(null);
     setBillingAddress(null);
@@ -114,18 +157,23 @@ export default function useCheckout(initialStep = 1, totalSteps = 6) {
     setPaymentDetails(null);
     setOrderData(null);
     setUser(null);
-  };
+    setCheckoutSessionId(null);
+    setLoading(false);
+  }, [setCheckoutSessionId]);
 
+  // ----------------------------------------------------
+  // RETURN
+  // ----------------------------------------------------
   return {
-    // states
     currentStep,
     shippingAddress,
     billingAddress,
     shippingMethod,
     paymentMethod,
     paymentDetails,
-    orderData,
     user,
+    orderData,
+    loading,
 
     // setters
     setShippingAddress,
@@ -133,20 +181,17 @@ export default function useCheckout(initialStep = 1, totalSteps = 6) {
     setShippingMethod,
     setPaymentMethod,
     setPaymentDetails,
-    setOrderData,
     setUser,
+    setOrderData,
 
-    // actions
+    // navigation
     nextStep,
     prevStep,
-    resetCheckout,
-    buildCheckoutPayload,
-    createOrder,
+    isNextDisabled,
 
-    // expose prepared mutations (SDK Phase 2 uses these)
-    createOrderMutation,
-    stripeSessionMutation,
-    razorpayOrderMutation,
-    verifyRazorpayMutation,
+    // checkout actions
+    buildCheckoutPayload,
+    placeOrder,
+    resetCheckout,
   };
 }

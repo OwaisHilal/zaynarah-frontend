@@ -1,106 +1,129 @@
 // src/features/checkout/hooks/usePlaceOrder.js
-import { useState } from 'react';
+import { useCallback } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { loadStripe } from '@stripe/stripe-js';
 
+import {
+  finalizeCheckoutAPI,
+  createOrderDraftAPI,
+  initPaymentAPI,
+} from './useCheckoutApi';
+
 export default function usePlaceOrder({ checkout }) {
-  const [error, setError] = useState('');
+  const queryClient = useQueryClient();
 
-  const placeOrder = async () => {
-    setError('');
+  // ----------------------------------------------------
+  // PAYMENT HANDLERS
+  // ----------------------------------------------------
 
-    if (!checkout.selectedAddress) {
-      setError('Please select an address!');
-      return;
-    }
+  // Stripe Checkout Redirect
+  const handleStripePayment = useCallback(async (payment) => {
+    const stripe = await loadStripe(payment.publishableKey);
+    if (!stripe) throw new Error('Stripe failed to load.');
+    await stripe.redirectToCheckout({ sessionId: payment.sessionId });
+  }, []);
 
-    checkout.setLoading(true);
-    try {
+  // Razorpay Popup Window
+  const handleRazorpayPayment = useCallback(
+    async (payment) => {
+      const options = {
+        key: payment.key,
+        amount: payment.amount,
+        currency: payment.currency,
+        name: 'Zaynarah Store',
+        description: 'Order Payment',
+        order_id: payment.orderId,
+        handler: () => checkout.resetCheckout(),
+        modal: { ondismiss: () => alert('Payment Cancelled') },
+      };
+
+      new window.Razorpay(options).open();
+    },
+    [checkout]
+  );
+
+  // Dynamic router for all future gateways
+  const gatewayHandler = useCallback(
+    async (payment, method) => {
+      switch (method) {
+        case 'stripe':
+          return await handleStripePayment(payment);
+
+        case 'razorpay':
+          return await handleRazorpayPayment(payment);
+
+        default:
+          throw new Error(`Unsupported payment method: ${method}`);
+      }
+    },
+    [handleStripePayment, handleRazorpayPayment]
+  );
+
+  // ----------------------------------------------------
+  // MAIN PLACE ORDER MUTATION
+  // ----------------------------------------------------
+  const placeOrderMutation = useMutation(
+    async () => {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error('You must be logged in to checkout.');
 
-      // 1️⃣ Fetch cart
-      const cartRes = await fetch('/api/cart', {
-        headers: { Authorization: `Bearer ${token}` },
+      const {
+        checkoutSessionId,
+        shippingAddress,
+        billingAddress,
+        shippingMethod,
+        paymentMethod,
+      } = checkout;
+
+      // 1️⃣ Finalize checkout (confirms totals & locks price)
+      const checkoutSession = await finalizeCheckoutAPI({
+        token,
+        checkoutSessionId,
+        shippingAddress,
+        billingAddress: billingAddress || shippingAddress,
+        shippingMethod,
       });
-      const cartData = await cartRes.json();
-      if (!cartData.items?.length) {
-        setError('Your cart is empty!');
-        return;
+
+      if (!checkoutSession.totalAmount) {
+        throw new Error('Failed to lock final price.');
       }
 
-      // 2️⃣ Create order
-      const totalAmount = cartData.items.reduce(
-        (sum, i) => sum + i.qty * i.price,
-        0
-      );
-      const orderRes = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          items: cartData.items,
-          address: checkout.selectedAddress,
-          totalAmount,
-        }),
+      // 2️⃣ Create draft order
+      const order = await createOrderDraftAPI({
+        token,
+        checkoutSessionId: checkoutSession.checkoutSessionId,
+        paymentGateway: paymentMethod,
       });
-      const order = await orderRes.json();
+
       checkout.setOrderData(order);
 
-      // 3️⃣ Payment
-      if (checkout.paymentMethod === 'stripe') {
-        await handleStripePayment(order, token);
-      } else if (checkout.paymentMethod === 'razorpay') {
-        await handleRazorpayPayment(order, token);
-      }
-    } catch (err) {
-      console.error(err);
-      setError('Something went wrong. Please try again.');
-    } finally {
-      checkout.setLoading(false);
+      // 3️⃣ Initialize selected payment gateway
+      const payment = await initPaymentAPI({
+        token,
+        orderId: order._id,
+        gateway: paymentMethod,
+      });
+
+      // 4️⃣ Route payment to correct gateway handler
+      await gatewayHandler(payment, paymentMethod);
+
+      return order;
+    },
+
+    // ----------------------------------------------------
+    // MUTATION CALLBACKS
+    // ----------------------------------------------------
+    {
+      onSuccess: () => queryClient.invalidateQueries(['cart']),
+      onError: (err) =>
+        alert(err.message || 'Something went wrong during checkout.'),
     }
+  );
+
+  return {
+    placeOrder: placeOrderMutation.mutateAsync,
+    isLoading: placeOrderMutation.isLoading,
+    isError: placeOrderMutation.isError,
+    error: placeOrderMutation.error,
   };
-
-  const handleStripePayment = async (order, token) => {
-    const stripeRes = await fetch('/api/payments/stripe/checkout-session', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ orderId: order._id }),
-    });
-    const { sessionId, publishableKey } = await stripeRes.json();
-    const stripe = await loadStripe(publishableKey);
-    await stripe.redirectToCheckout({ sessionId });
-  };
-
-  const handleRazorpayPayment = async (order, token) => {
-    const razorRes = await fetch('/api/payments/razorpay/order', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ orderId: order._id }),
-    });
-    const data = await razorRes.json();
-
-    const options = {
-      key: data.key,
-      amount: data.amount,
-      currency: data.currency,
-      name: 'Zaynarah Store',
-      description: 'Order Payment',
-      order_id: data.id,
-      handler: function () {
-        alert('Payment Successful!');
-        checkout.resetCheckout();
-      },
-      modal: { ondismiss: () => alert('Payment Cancelled') },
-    };
-    new window.Razorpay(options).open();
-  };
-
-  return { placeOrder, error, setError };
 }

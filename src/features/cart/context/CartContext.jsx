@@ -1,4 +1,4 @@
-// src/features/checkout/hooks/CartContext.jsx
+// src/features/cart/context/CartContext.jsx
 import {
   createContext,
   useContext,
@@ -6,7 +6,7 @@ import {
   useState,
   useCallback,
 } from 'react';
-import { useCartStore } from '../../cart/hooks/cartStore';
+import { useCartStore } from '../hooks/cartStore';
 
 const CartContext = createContext();
 

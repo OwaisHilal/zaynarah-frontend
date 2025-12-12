@@ -8,12 +8,12 @@ const paymentMethods = [
   {
     id: 'stripe',
     label: 'Stripe (Global)',
-    description: 'Pay globally with Stripe',
+    description: 'Pay internationally using cards / wallets',
   },
   {
     id: 'razorpay',
     label: 'Razorpay (India)',
-    description: 'Pay securely with Razorpay',
+    description: 'Pay using UPI, Netbanking, Wallets (Indian users)',
   },
 ];
 
@@ -22,34 +22,39 @@ export default function PaymentOptions({
   setSelectedPayment,
 }) {
   return (
-    <RadioGroup
-      value={selectedPayment}
-      onValueChange={setSelectedPayment}
-      className="space-y-4"
-    >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="flex flex-col gap-3">
+      <h3 className="font-semibold text-gray-900 text-lg">
+        Select Payment Method
+      </h3>
+
+      <RadioGroup
+        value={selectedPayment}
+        onValueChange={setSelectedPayment}
+        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+      >
         {paymentMethods.map((method) => {
           const isSelected = selectedPayment === method.id;
+
           return (
             <motion.label
               key={method.id}
               whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              whileTap={{ scale: 0.97 }}
               className={cn(
-                'cursor-pointer border rounded-lg p-4 flex flex-col transition-all',
+                'cursor-pointer border rounded-xl p-4 flex flex-col gap-2 transition-all',
                 isSelected
-                  ? 'border-rose-600 bg-rose-50 shadow-md'
-                  : 'border-gray-300 hover:shadow-sm'
+                  ? 'border-rose-600 bg-rose-50 shadow-sm'
+                  : 'border-gray-300 hover:shadow'
               )}
             >
-              <div className="flex items-center gap-3">
-                {/* Hidden Radio for accessibility */}
-                <RadioGroupItem value={method.id} className="sr-only" />
+              {/* Accessible radio item */}
+              <RadioGroupItem value={method.id} className="sr-only" />
 
-                {/* Custom Circle */}
+              <div className="flex items-center gap-3">
+                {/* Custom circle indicator */}
                 <div
                   className={cn(
-                    'w-5 h-5 flex items-center justify-center rounded-full border transition-colors',
+                    'w-5 h-5 rounded-full flex items-center justify-center border transition-colors',
                     isSelected
                       ? 'border-rose-600 bg-rose-600'
                       : 'border-gray-400 bg-white'
@@ -58,14 +63,16 @@ export default function PaymentOptions({
                   {isSelected && <Check className="w-3 h-3 text-white" />}
                 </div>
 
-                <span className="font-semibold">{method.label}</span>
+                <span className="font-medium text-gray-900">
+                  {method.label}
+                </span>
               </div>
 
-              <p className="text-sm text-gray-500 mt-2">{method.description}</p>
+              <p className="text-sm text-gray-500">{method.description}</p>
             </motion.label>
           );
         })}
-      </div>
-    </RadioGroup>
+      </RadioGroup>
+    </div>
   );
 }

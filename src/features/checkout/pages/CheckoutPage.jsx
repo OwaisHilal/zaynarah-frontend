@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import useCheckout from '../hooks/useCheckout';
-import { useCart } from '../hooks/CartContext';
+import { useCart } from '../../cart/context/CartContext';
 import { useUserStore } from '../../user/hooks/useUser';
 
 import CheckoutSteps from '../components/CheckoutSteps';
@@ -13,36 +13,29 @@ import CheckoutNavigation from '../components/CheckoutNavigation';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const checkout = useCheckout(); // internal hooks: user, addresses, payment, step
 
+  const checkout = useCheckout();
   const { cart = [], cartTotal = 0 } = useCart() || {};
   const user = useUserStore((state) => state.user);
 
   const [error, setError] = useState('');
 
   const steps = [
-    'Cart Review',
     'Shipping Address',
-    'Billing Address',
     'Shipping Method',
-    'Payment',
-    'Review',
+    'Payment Method',
+    'Payment Details',
+    'Review Order',
   ];
 
-  // ---------------------------
-  // LOAD USER INTO CHECKOUT
-  // ---------------------------
   useEffect(() => {
     if (user) checkout.setUser(user);
   }, [user]);
 
-  // ---------------------------
-  // STEP NAVIGATION
-  // ---------------------------
   const handleNext = () => {
-    const validationError = checkout.validateStep(cart);
-    if (validationError) {
-      setError(validationError);
+    const msg = checkout.validateStep(checkout.currentStep);
+    if (msg) {
+      setError(msg);
       return;
     }
     setError('');
@@ -54,17 +47,12 @@ export default function CheckoutPage() {
     checkout.prevStep();
   };
 
-  // ---------------------------
-  // PLACE ORDER
-  // ---------------------------
   const handlePlaceOrder = async () => {
     try {
       setError('');
       const order = await checkout.placeOrder({ cart, cartTotal });
-
       navigate('/checkout/success', { state: { order } });
     } catch (err) {
-      console.error('CheckoutPage.placeOrder:', err);
       setError(err.message || 'Order could not be completed.');
     }
   };

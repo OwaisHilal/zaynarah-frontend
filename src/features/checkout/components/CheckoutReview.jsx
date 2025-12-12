@@ -1,22 +1,36 @@
+// src/features/checkout/components/CheckoutReview.jsx
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { formatCurrency } from '../utils/checkoutHelpers';
+
 export default function CheckoutReview({ checkout }) {
+  const order = checkout.orderData;
+
+  if (!order) {
+    return (
+      <p className="text-center text-gray-500 text-sm">
+        No order data found. Complete previous steps.
+      </p>
+    );
+  }
+
   const {
-    cart,
-    cartTotal,
+    cart = [],
+    cartTotal = {},
     shippingAddress,
     billingAddress,
     shippingMethod,
     paymentMethod,
     paymentDetails,
-  } = checkout.orderDraft; // Phase 2: all data stored in orderDraft
+  } = order;
 
   return (
     <div className="space-y-6">
-      {/* ---------------------------------------------------- */}
       {/* SHIPPING ADDRESS */}
-      {/* ---------------------------------------------------- */}
-      <div className="p-4 border rounded-lg">
-        <h2 className="text-lg font-semibold mb-2">Shipping Address</h2>
-        <div className="text-sm text-gray-700 space-y-1">
+      <Card className="border border-gray-200">
+        <CardHeader>
+          <h2 className="text-lg font-semibold">Shipping Address</h2>
+        </CardHeader>
+        <CardContent className="text-sm text-gray-700 space-y-1">
           <p>{shippingAddress.fullName}</p>
           <p>{shippingAddress.addressLine1}</p>
           {shippingAddress.addressLine2 && (
@@ -28,15 +42,15 @@ export default function CheckoutReview({ checkout }) {
           </p>
           <p>{shippingAddress.country}</p>
           <p>Phone: {shippingAddress.phone}</p>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* ---------------------------------------------------- */}
       {/* BILLING ADDRESS */}
-      {/* ---------------------------------------------------- */}
-      <div className="p-4 border rounded-lg">
-        <h2 className="text-lg font-semibold mb-2">Billing Address</h2>
-        <div className="text-sm text-gray-700 space-y-1">
+      <Card className="border border-gray-200">
+        <CardHeader>
+          <h2 className="text-lg font-semibold">Billing Address</h2>
+        </CardHeader>
+        <CardContent className="text-sm text-gray-700 space-y-1">
           <p>{billingAddress.fullName}</p>
           <p>{billingAddress.addressLine1}</p>
           {billingAddress.addressLine2 && <p>{billingAddress.addressLine2}</p>}
@@ -46,68 +60,82 @@ export default function CheckoutReview({ checkout }) {
           </p>
           <p>{billingAddress.country}</p>
           <p>Phone: {billingAddress.phone}</p>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* ---------------------------------------------------- */}
       {/* SHIPPING METHOD */}
-      {/* ---------------------------------------------------- */}
-      <div className="p-4 border rounded-lg">
-        <h2 className="text-lg font-semibold mb-2">Shipping Method</h2>
-        <p className="text-sm text-gray-700">
-          {shippingMethod?.label} — {shippingMethod?.eta}
-        </p>
-      </div>
+      <Card className="border border-gray-200">
+        <CardHeader>
+          <h2 className="text-lg font-semibold">Shipping Method</h2>
+        </CardHeader>
+        <CardContent className="text-sm text-gray-700">
+          {shippingMethod?.label} — {shippingMethod?.deliveryEstimate}
+        </CardContent>
+      </Card>
 
-      {/* ---------------------------------------------------- */}
-      {/* PAYMENT METHOD SUMMARY */}
-      {/* ---------------------------------------------------- */}
-      <div className="p-4 border rounded-lg">
-        <h2 className="text-lg font-semibold mb-2">Payment Method</h2>
-        <p className="capitalize text-sm text-gray-700">{paymentMethod}</p>
+      {/* PAYMENT METHOD */}
+      <Card className="border border-gray-200">
+        <CardHeader>
+          <h2 className="text-lg font-semibold">Payment Method</h2>
+        </CardHeader>
+        <CardContent className="text-sm text-gray-700">
+          <p className="capitalize">{paymentMethod}</p>
 
-        {/* Show minimal details depending on gateway */}
-        {paymentMethod === 'stripe' && (
-          <p className="text-xs mt-1 text-gray-500">
-            Paying via Stripe Checkout — Email: <b>{paymentDetails.email}</b>
-          </p>
-        )}
+          {paymentMethod === 'stripe' && (
+            <p className="text-xs mt-1 text-gray-500">
+              Stripe Checkout — Email: <b>{paymentDetails?.email}</b>
+            </p>
+          )}
 
-        {paymentMethod === 'razorpay' && (
-          <p className="text-xs mt-1 text-gray-500">
-            Razorpay — {paymentDetails.name}, {paymentDetails.phone}
-          </p>
-        )}
-      </div>
+          {paymentMethod === 'razorpay' && (
+            <p className="text-xs mt-1 text-gray-500">
+              Razorpay — {paymentDetails?.name}, {paymentDetails?.phone}
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* ---------------------------------------------------- */}
-      {/* ORDER SUMMARY (Cart total) */}
-      {/* ---------------------------------------------------- */}
-      <div className="p-4 border rounded-lg">
-        <h2 className="text-lg font-semibold mb-3">Order Summary</h2>
+      {/* ORDER SUMMARY */}
+      <Card className="border border-gray-200">
+        <CardHeader>
+          <h2 className="text-lg font-semibold">Order Summary</h2>
+        </CardHeader>
 
-        <div className="space-y-2 text-sm text-gray-700">
-          <div className="flex justify-between">
-            <span>Items total:</span>
-            <span>₹{cartTotal.items}</span>
+        <CardContent className="space-y-3 text-sm text-gray-700">
+          <div className="space-y-1">
+            {cart.map((item) => (
+              <div key={item.productId} className="flex justify-between">
+                <span>
+                  {item.title} × {item.qty}
+                </span>
+                <span className="font-semibold text-rose-600">
+                  {formatCurrency(item.price * item.qty)}
+                </span>
+              </div>
+            ))}
           </div>
 
-          <div className="flex justify-between">
-            <span>Shipping:</span>
-            <span>₹{cartTotal.shipping}</span>
-          </div>
+          <hr className="border-gray-200" />
 
-          <div className="flex justify-between">
-            <span>Tax:</span>
-            <span>₹{cartTotal.tax}</span>
-          </div>
+          <Row label="Items Total" value={formatCurrency(cartTotal.items)} />
+          <Row label="Shipping" value={formatCurrency(cartTotal.shipping)} />
+          <Row label="Tax" value={formatCurrency(cartTotal.tax)} />
 
-          <div className="flex justify-between font-semibold text-gray-900 pt-3 border-t">
-            <span>Grand Total:</span>
-            <span>₹{cartTotal.grand}</span>
+          <div className="flex justify-between font-bold text-lg text-gray-900 pt-3 border-t">
+            <span>Grand Total</span>
+            <span>{formatCurrency(cartTotal.grand)}</span>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="flex justify-between font-semibold text-gray-800">
+      <span>{label}</span>
+      <span>{value}</span>
     </div>
   );
 }

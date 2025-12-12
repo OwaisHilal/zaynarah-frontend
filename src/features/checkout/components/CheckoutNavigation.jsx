@@ -1,79 +1,111 @@
+// src/features/checkout/components/CheckoutNavigation.jsx
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { formatCurrency } from '../utils/checkoutHelpers';
+import { useCart } from '../../cart/context/CartContext';
 
 export default function CheckoutNavigation({
   currentStep,
   totalSteps,
   onNext,
   onBack,
+  onPlaceOrder,
   checkout,
 }) {
-  const {
-    loading,
-    paymentMethod,
-    paymentDetails,
-    validatePaymentDetails,
-    placeOrder,
-  } = checkout;
+  const nextDisabled = checkout.isNextDisabled
+    ? checkout.isNextDisabled(currentStep)
+    : false;
 
-  // ----------------------------------------------------
-  // CONTROL: Disable "Next" on payment step if required fields missing
-  // ----------------------------------------------------
-  const isPaymentStep = currentStep === totalSteps - 0; // last step = payment review
+  const { cart } = useCart() || {};
+  const safeCart = Array.isArray(cart) ? cart : [];
 
-  const isNextDisabled =
-    loading || (isPaymentStep && paymentMethod && !paymentDetails); // minimal check; full validation is in SDK
+  const subtotal = safeCart.reduce(
+    (sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 0),
+    0
+  );
 
-  // ----------------------------------------------------
-  // FINAL PLACE ORDER ACTION
-  // ----------------------------------------------------
-  const handlePlaceOrder = async () => {
-    try {
-      // SDK-level validation → throws clean errors
-      validatePaymentDetails();
-      await placeOrder();
-    } catch (err) {
-      console.error(err);
-      alert(err.message || 'Unable to place order.');
-    }
-  };
+  const shippingCost =
+    checkout.shippingMethod?.cost ||
+    checkout.orderDraft?.shippingMethod?.cost ||
+    0;
 
-  // ----------------------------------------------------
-  // UI
-  // ----------------------------------------------------
+  const grandTotal = subtotal + shippingCost;
+
+  const REVIEW_STEP = 5;
+  const PAYMENT_DETAILS_STEP = 4;
+
+  const renderMiniSummary = () => (
+    <Card className="mb-4 shadow-sm border border-gray-200">
+      <CardHeader>
+        <h2 className="text-lg font-semibold text-rose-600">Order Summary</h2>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm text-gray-700">
+        {safeCart.map((item) => (
+          <div
+            key={item.productId}
+            className="flex justify-between text-gray-700"
+          >
+            <span>
+              {item.title} × {item.qty}
+            </span>
+            <strong>{formatCurrency(item.price * item.qty)}</strong>
+          </div>
+        ))}
+
+        <hr className="my-2" />
+
+        <div className="flex justify-between font-semibold">
+          <span>Subtotal</span>
+          <span>{formatCurrency(subtotal)}</span>
+        </div>
+
+        {shippingCost > 0 && (
+          <div className="flex justify-between font-semibold">
+            <span>Shipping</span>
+            <span>{formatCurrency(shippingCost)}</span>
+          </div>
+        )}
+
+        <div className="flex justify-between font-bold text-gray-900">
+          <span>Total</span>
+          <span>{formatCurrency(grandTotal)}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <div className="flex justify-between mt-6 gap-4">
-      {/* Back Button */}
-      {currentStep > 1 ? (
-        <Button
-          variant="outline"
-          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-          onClick={onBack}
-          disabled={loading}
-        >
-          Back
-        </Button>
-      ) : (
-        <div />
-      )}
+    <div className="mt-6">
+      {/* Show mini summary on payment details step */}
+      {currentStep === PAYMENT_DETAILS_STEP && renderMiniSummary()}
 
-      {/* Next or Place Order */}
-      {currentStep < totalSteps ? (
-        <Button
-          className="bg-rose-600 hover:bg-rose-700 text-white"
-          onClick={onNext}
-          disabled={isNextDisabled}
-        >
-          {loading ? 'Processing...' : 'Next'}
-        </Button>
-      ) : (
-        <Button
-          className="bg-rose-600 hover:bg-rose-700 text-white"
-          onClick={handlePlaceOrder}
-          disabled={loading}
-        >
-          {loading ? 'Processing...' : 'Place Order'}
-        </Button>
-      )}
+      <div className="flex justify-between gap-4">
+        {currentStep > 1 ? (
+          <Button variant="outline" onClick={onBack}>
+            Back
+          </Button>
+        ) : (
+          <div />
+        )}
+
+        {currentStep < REVIEW_STEP ? (
+          <Button
+            className="bg-rose-600 hover:bg-rose-700 text-white"
+            disabled={nextDisabled || checkout.loading}
+            onClick={onNext}
+          >
+            {checkout.loading ? 'Processing…' : 'Next'}
+          </Button>
+        ) : (
+          <Button
+            className="bg-rose-600 hover:bg-rose-700 text-white"
+            disabled={checkout.loading}
+            onClick={onPlaceOrder}
+          >
+            {checkout.loading ? 'Processing…' : 'Place Order'}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

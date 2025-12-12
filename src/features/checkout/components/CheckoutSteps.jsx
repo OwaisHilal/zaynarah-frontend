@@ -3,17 +3,15 @@ import { cn } from '@/lib/utils';
 
 export default function CheckoutSteps({ currentStep = 1 }) {
   const steps = [
-    'Delivery Address',
-    'Billing Address',
+    'Shipping Address',
     'Shipping Method',
     'Payment Method',
     'Payment Details',
-    'Order Review',
+    'Review Order',
   ];
 
   return (
     <div className="relative flex justify-between mb-6">
-      {/* Background line behind steps */}
       <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -z-10"></div>
 
       {steps.map((step, index) => {
@@ -38,7 +36,7 @@ export default function CheckoutSteps({ currentStep = 1 }) {
 
             <span
               className={cn(
-                'mt-2 text-sm font-medium text-center',
+                'mt-2 text-xs font-medium text-center max-w-[80px]',
                 isActive
                   ? 'text-rose-600'
                   : isCompleted

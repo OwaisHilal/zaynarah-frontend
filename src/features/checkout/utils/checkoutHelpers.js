@@ -1,8 +1,5 @@
 // src/features/checkout/utils/checkoutHelpers.js
 
-/**
- * Format a number as currency
- */
 export const formatCurrency = (amount, currency = 'INR') => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -10,9 +7,6 @@ export const formatCurrency = (amount, currency = 'INR') => {
   }).format(amount);
 };
 
-/**
- * Validate an address object
- */
 export const validateAddress = (address) => {
   if (!address) return false;
   const requiredFields = [
@@ -26,9 +20,6 @@ export const validateAddress = (address) => {
   return requiredFields.every((field) => address[field]?.trim());
 };
 
-/**
- * Validate payment details for Stripe or Razorpay
- */
 export const validatePaymentDetails = (paymentMethod, paymentDetails) => {
   if (!paymentMethod || !paymentDetails) return false;
 
@@ -42,10 +33,6 @@ export const validatePaymentDetails = (paymentMethod, paymentDetails) => {
   }
 };
 
-/**
- * Calculate cart total
- * cart: [{ price, quantity }]
- */
 export const calculateCartTotal = (cart = []) => {
   return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 };

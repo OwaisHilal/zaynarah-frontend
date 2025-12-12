@@ -1,122 +1,121 @@
-// src/features/checkout/hooks/usePaymentHandler.js
 import { loadStripe } from '@stripe/stripe-js';
 
 /**
- * ----------------------------------------------------
- * STRIPE PAYMENT HANDLER
- * ----------------------------------------------------
+ * Normalizes any backend Stripe response into:
+ *   { publishableKey, sessionId }
  */
-export async function startStripePayment({ publishableKey, sessionId }) {
-  try {
-    if (!publishableKey || !sessionId) {
-      throw new Error('Stripe session data missing.');
-    }
+function normalizeStripeSession(data) {
+  return {
+    publishableKey:
+      data?.publishableKey ||
+      data?.publishable_key ||
+      data?.publishable ||
+      null,
 
-    const stripe = await loadStripe(publishableKey);
-    if (!stripe) throw new Error('Stripe failed to initialize.');
-
-    const result = await stripe.redirectToCheckout({ sessionId });
-
-    if (result?.error) {
-      throw new Error(result.error.message || 'Stripe redirect failed.');
-    }
-
-    return {
-      success: true,
-      gateway: 'stripe',
-      sessionId,
-    };
-  } catch (err) {
-    console.error('Stripe Payment Error:', err);
-    throw err;
-  }
+    sessionId: data?.sessionId || data?.id || data?.checkoutSessionId || null,
+  };
 }
 
 /**
- * ----------------------------------------------------
- * RAZORPAY PAYMENT HANDLER
- * ----------------------------------------------------
+ * STRIPE
  */
-export function startRazorpayPayment({
-  key,
-  amount,
-  currency,
-  orderId,
-  name = 'Zaynarah Store',
-  description = 'Order Payment',
-  onSuccess,
-  onCancel,
-}) {
+export async function startStripePayment(session) {
+  const normalized = normalizeStripeSession(session);
+
+  if (!normalized.publishableKey || !normalized.sessionId) {
+    console.error('Stripe session received:', session);
+    throw new Error('Stripe Checkout session is invalid.');
+  }
+
+  const stripe = await loadStripe(normalized.publishableKey);
+  if (!stripe) throw new Error('Stripe failed to initialize.');
+
+  const result = await stripe.redirectToCheckout({
+    sessionId: normalized.sessionId,
+  });
+
+  if (result?.error)
+    throw new Error(result.error.message || 'Stripe redirect failed.');
+
+  return {
+    success: true,
+    gateway: 'stripe',
+    sessionId: normalized.sessionId,
+  };
+}
+
+/**
+ * Normalizes Razorpay backend response into:
+ *   { key, amount, currency, orderId }
+ */
+function normalizeRazorpayOrder(data) {
+  return {
+    key: data?.key || data?.keyId || data?.key_id || null,
+    amount: data?.amount || null,
+    currency: data?.currency || 'INR',
+    orderId: data?.orderId || data?.id || data?.order_id || null,
+  };
+}
+
+/**
+ * RAZORPAY
+ */
+export function startRazorpayPayment(data) {
   return new Promise((resolve, reject) => {
+    const normalized = normalizeRazorpayOrder(data);
+
+    if (!window.Razorpay) return reject(new Error('Razorpay SDK not loaded.'));
+
+    if (!normalized.key || !normalized.amount || !normalized.orderId) {
+      console.error('Razorpay order received:', data);
+      return reject(new Error('Razorpay order is missing required fields.'));
+    }
+
+    const options = {
+      key: normalized.key,
+      amount: normalized.amount,
+      currency: normalized.currency,
+      order_id: normalized.orderId,
+
+      name: 'Zaynarah Store',
+      description: 'Order Payment',
+
+      handler(response) {
+        resolve({
+          success: true,
+          gateway: 'razorpay',
+          orderId: normalized.orderId,
+          payment: response,
+        });
+      },
+
+      modal: {
+        ondismiss() {
+          reject(new Error('Payment cancelled by user.'));
+        },
+      },
+    };
+
     try {
-      if (!window.Razorpay) {
-        reject(new Error('Razorpay SDK missing.'));
-        return;
-      }
-
-      if (!key || !amount || !currency || !orderId) {
-        reject(new Error('Razorpay payment data missing.'));
-        return;
-      }
-
-      const options = {
-        key,
-        amount,
-        currency,
-        name,
-        description,
-        order_id: orderId,
-
-        handler: function (response) {
-          if (onSuccess) onSuccess(response);
-          resolve({
-            success: true,
-            gateway: 'razorpay',
-            orderId,
-            payment: response,
-          });
-        },
-
-        modal: {
-          ondismiss: function () {
-            if (onCancel) onCancel();
-            reject(new Error('Payment cancelled by user.'));
-          },
-        },
-      };
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
+      const rp = new window.Razorpay(options);
+      rp.open();
     } catch (err) {
-      console.error('Razorpay Payment Error:', err);
-      reject(err);
+      console.error('Razorpay initialization failure:', err);
+      reject(new Error('Failed to initialize Razorpay.'));
     }
   });
 }
 
 /**
- * ----------------------------------------------------
- * GENERIC PAYMENT ROUTER
- * SDK-level gateway switcher
- * ----------------------------------------------------
+ * GENERIC GATEWAY ROUTER
  */
 export async function startPayment(gateway, data) {
   switch (gateway) {
     case 'stripe':
-      return await startStripePayment({
-        publishableKey: data.publishableKey,
-        sessionId: data.sessionId,
-      });
+      return await startStripePayment(data);
 
     case 'razorpay':
-      return await startRazorpayPayment({
-        key: data.key,
-        amount: data.amount,
-        currency: data.currency,
-        orderId: data.orderId,
-        onSuccess: data.onSuccess,
-        onCancel: data.onCancel,
-      });
+      return await startRazorpayPayment(data);
 
     default:
       throw new Error(`Unsupported payment gateway: ${gateway}`);

@@ -11,10 +11,9 @@ import { Button } from '@/components/ui/button';
 export default function DesktopMenu() {
   return (
     <div className="hidden md:flex items-center gap-8">
-      {/* Shop */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="text-sm font-medium tracking-wide">
+          <Button variant="ghost" className="text-sm font-medium">
             Shop
           </Button>
         </DropdownMenuTrigger>
@@ -35,7 +34,6 @@ export default function DesktopMenu() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Brand pages */}
       <Link
         to="/the-craft"
         className="text-sm font-medium text-text-secondary hover:text-text-primary transition"

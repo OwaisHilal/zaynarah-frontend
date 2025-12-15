@@ -29,8 +29,13 @@ export default function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Account">
-          {user.name[0]}
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Account"
+          className="rounded-full"
+        >
+          {user.name?.[0] ?? 'U'}
         </Button>
       </DropdownMenuTrigger>
 

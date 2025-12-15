@@ -46,15 +46,9 @@ export default function MobileMenu() {
           <Link to="/shop" className="block text-lg font-medium">
             All Products
           </Link>
-          <Link to="/shop?category=shawls" className="block">
-            Shawls
-          </Link>
-          <Link to="/shop?category=scarves" className="block">
-            Scarves
-          </Link>
-          <Link to="/shop?category=accessories" className="block">
-            Accessories
-          </Link>
+          <Link to="/shop?category=shawls">Shawls</Link>
+          <Link to="/shop?category=scarves">Scarves</Link>
+          <Link to="/shop?category=accessories">Accessories</Link>
         </div>
 
         {/* Brand */}

@@ -1,6 +1,7 @@
 // src/App.jsx
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
 import { CartProvider } from './features/cart/context/CartContext';
+import SearchProvider from '@/features/search/context/SearchProvider';
 
 import CartPage from './features/cart/pages/CartPage';
 import ProductPage from './features/products/pages/ProductPage';
@@ -17,6 +18,8 @@ import CheckoutPage from './features/checkout/pages/CheckoutPage';
 import OrderSuccessPage from './features/checkout/pages/OrderSuccess';
 import TheCraftPage from './pages/TheCraft';
 
+import SearchModal from '@/features/search/components/SearchModal';
+
 function ProtectedRoute({ children }) {
   const { user } = useUserStore();
   if (!user) return <Navigate to="/login" replace />;
@@ -27,46 +30,49 @@ export default function App() {
   return (
     <BrowserRouter>
       <CartProvider>
-        <Routes>
-          <Route element={<Layout />}>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/shop" element={<ShopPage />} />
-            <Route path="/product/:id" element={<ProductPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/the-craft" element={<TheCraftPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+        <SearchProvider>
+          <SearchModal />
+          <Routes>
+            <Route element={<Layout />}>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/shop" element={<ShopPage />} />
+              <Route path="/product/:id" element={<ProductPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/the-craft" element={<TheCraftPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
 
-            {/* Protected Routes */}
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected Routes */}
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/checkout"
-              element={
-                <ProtectedRoute>
-                  <CheckoutPage />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/checkout"
+                element={
+                  <ProtectedRoute>
+                    <CheckoutPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/checkout/success"
-              element={
-                <ProtectedRoute>
-                  <OrderSuccessPage />
-                </ProtectedRoute>
-              }
-            />
-          </Route>
-        </Routes>
+              <Route
+                path="/checkout/success"
+                element={
+                  <ProtectedRoute>
+                    <OrderSuccessPage />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+          </Routes>
+        </SearchProvider>
       </CartProvider>
     </BrowserRouter>
   );

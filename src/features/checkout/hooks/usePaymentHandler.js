@@ -1,3 +1,4 @@
+// src/ features/checkout/hooks/usePaymentHandler.js
 import { loadStripe } from '@stripe/stripe-js';
 
 /**

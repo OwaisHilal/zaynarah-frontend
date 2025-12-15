@@ -1,9 +1,8 @@
-// src/features/checkout/pages/CheckoutPage.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import useCheckout from '../hooks/useCheckout';
-import { useCart } from '../../cart/context/CartContext';
+import { useCheckoutStore } from '../store/checkoutStore';
+import { useCart } from '../../cart/context/useCart';
 import { useUserStore } from '../../user/hooks/useUser';
 
 import CheckoutSteps from '../components/CheckoutSteps';
@@ -13,10 +12,9 @@ import CheckoutNavigation from '../components/CheckoutNavigation';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-
-  const checkout = useCheckout();
-  const { cart = [], cartTotal = 0 } = useCart() || {};
-  const user = useUserStore((state) => state.user);
+  const checkout = useCheckoutStore();
+  const { cart = [], cartTotal = {} } = useCart() || {};
+  const user = useUserStore((s) => s.user);
 
   const [error, setError] = useState('');
 
@@ -34,10 +32,7 @@ export default function CheckoutPage() {
 
   const handleNext = () => {
     const msg = checkout.validateStep(checkout.currentStep);
-    if (msg) {
-      setError(msg);
-      return;
-    }
+    if (msg) return setError(msg);
     setError('');
     checkout.nextStep();
   };
@@ -50,10 +45,10 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     try {
       setError('');
-      const order = await checkout.placeOrder({ cart, cartTotal });
+      const order = await checkout.placeOrderAndPay({ cart, cartTotal });
       navigate('/checkout/success', { state: { order } });
     } catch (err) {
-      setError(err.message || 'Order could not be completed.');
+      setError(err.message || 'Order failed.');
     }
   };
 
@@ -62,11 +57,7 @@ export default function CheckoutPage() {
       <CheckoutProgress currentStep={checkout.currentStep} steps={steps} />
       <CheckoutSteps currentStep={checkout.currentStep} />
 
-      <StepContent
-        currentStep={checkout.currentStep}
-        checkout={checkout}
-        error={error}
-      />
+      <StepContent currentStep={checkout.currentStep} error={error} />
 
       <CheckoutNavigation
         currentStep={checkout.currentStep}
@@ -74,7 +65,6 @@ export default function CheckoutPage() {
         onNext={handleNext}
         onBack={handleBack}
         onPlaceOrder={handlePlaceOrder}
-        checkout={checkout}
       />
     </div>
   );

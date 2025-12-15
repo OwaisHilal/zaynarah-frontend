@@ -1,85 +1,49 @@
-// src/features/checkout/components/OrderSummary.jsx
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { useCart } from '../../cart/context/CartContext';
+import { useCart } from '../../cart/context/useCart';
+import { useCheckoutStore } from '../store/checkoutStore';
 import { formatCurrency } from '../utils/checkoutHelpers';
 
-export default function OrderSummary({ checkout }) {
-  const { cart } = useCart() || {};
-  const safeCart = Array.isArray(cart) ? cart : [];
+export default function OrderSummary() {
+  const { cart = [] } = useCart() || {};
+  const { shippingMethod } = useCheckoutStore();
 
-  // Subtotal
-  const subtotal = safeCart.reduce((sum, item) => {
-    const price = Number(item.price) || 0;
-    const qty = Number(item.qty) || 0;
-    return sum + price * qty;
-  }, 0);
+  const subtotal = cart.reduce(
+    (s, i) => s + Number(i.price || 0) * Number(i.qty || 1),
+    0
+  );
 
-  const shippingCost = checkout.orderDraft?.cartTotal?.shipping || 0;
-  const grandTotal = subtotal + shippingCost;
+  const shipping = shippingMethod?.cost || 0;
+  const total = subtotal + shipping;
 
   return (
-    <Card className="shadow-sm border border-gray-200">
+    <Card>
       <CardHeader>
         <h2 className="text-xl font-semibold text-rose-600">Order Summary</h2>
       </CardHeader>
+      <CardContent className="space-y-3">
+        {cart.map((i) => (
+          <div key={i.productId} className="flex justify-between">
+            <span>
+              {i.title} × {i.qty}
+            </span>
+            <span>{formatCurrency(i.price * i.qty)}</span>
+          </div>
+        ))}
 
-      <CardContent className="space-y-4">
-        {/* EMPTY CART */}
-        {!safeCart.length && (
-          <p className="text-gray-500 text-sm text-center">
-            Your cart is empty.
-          </p>
-        )}
-
-        {/* ITEMS */}
-        {safeCart.map((item) => {
-          const price = Number(item.price) || 0;
-          const qty = Number(item.qty) || 0;
-
-          return (
-            <div
-              key={item._id || item.id}
-              className="flex justify-between text-gray-700"
-            >
-              <span>
-                {item.title} × {qty}
-              </span>
-              <span className="font-semibold text-rose-600">
-                {formatCurrency(price * qty)}
-              </span>
-            </div>
-          );
-        })}
-
-        {safeCart.length > 0 && (
-          <>
-            <hr className="border-gray-200" />
-
-            <Row label="Subtotal" value={formatCurrency(subtotal)} />
-
-            {checkout.orderDraft?.shippingMethod && (
-              <Row
-                label={`Shipping (${checkout.orderDraft.shippingMethod.label})`}
-                value={formatCurrency(shippingCost)}
-              />
-            )}
-
-            <div className="flex justify-between font-bold text-lg text-gray-800 mt-2">
-              <span>Total</span>
-              <span>{formatCurrency(grandTotal)}</span>
-            </div>
-          </>
-        )}
+        <hr />
+        <Row label="Subtotal" value={subtotal} />
+        <Row label="Shipping" value={shipping} />
+        <Row label="Total" value={total} bold />
       </CardContent>
     </Card>
   );
 }
 
-function Row({ label, value }) {
+function Row({ label, value, bold }) {
   return (
-    <div className="flex justify-between font-semibold text-gray-800">
+    <div className={`flex justify-between ${bold ? 'font-bold' : ''}`}>
       <span>{label}</span>
-      <span>{value}</span>
+      <span>{formatCurrency(value)}</span>
     </div>
   );
 }

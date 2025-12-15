@@ -14,52 +14,27 @@ module.exports = {
   // 3. Define your custom theme extensions
   theme: {
     extend: {
-      // ---------------- Custom Colors ----------------
       colors: {
-        // Defines the primary brand color
-        primary: {
-          DEFAULT: '#C19A6B', // Luxury gold/bronze
-          foreground: '#FFFFFF', // Text color to use on top of primary
+        brand: {
+          gold: 'rgb(var(--brand-gold))',
+          rose: 'rgb(var(--brand-rose))',
+          black: 'rgb(var(--brand-black))',
         },
-        // Used for backgrounds or secondary elements
-        accent: {
-          DEFAULT: '#EDE8DF', // Soft beige/cream
+        bg: {
+          primary: 'rgb(var(--bg-primary))',
+          secondary: 'rgb(var(--bg-secondary))',
         },
-        // Used for dark mode backgrounds or elegant text
-        dark: {
-          DEFAULT: '#1A1A1A', // Elegant deep black
+        text: {
+          primary: 'rgb(var(--text-primary))',
+          secondary: 'rgb(var(--text-secondary))',
         },
-        // Shadcn components often require background/foreground definitions
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        card: 'hsl(var(--card))',
-        'card-foreground': 'hsl(var(--card-foreground))',
-        // ... (Add other shadcn colors like border, input, ring if needed)
-      },
-
-      // ---------------- Custom Fonts ----------------
-      fontFamily: {
-        // Used for headings, large titles (Playfair Display, a luxury choice)
-        display: ['Playfair Display', 'serif'],
-        // Used for body text, paragraphs, buttons (Inter, modern and readable)
-        body: ['Inter', 'sans-serif'],
-        // If you are using shadcn defaults
-        sans: ['Inter', 'sans-serif'],
-      },
-
-      // ---------------- Custom Utilities ----------------
-      borderRadius: {
-        // Provides softer, more elegant corners
-        xl: '1rem',
-        '2xl': '1.25rem',
-      },
-
-      boxShadow: {
-        // Subtle shadow, avoids harsh contrast
-        soft: '0 4px 20px rgba(0,0,0,0.06)',
+        border: {
+          subtle: 'rgb(var(--border-subtle))',
+        },
       },
     },
   },
+  darkMode: 'class',
 
   // 4. Plugins (Usually required for shadcn/ui or custom utilities)
   plugins: [

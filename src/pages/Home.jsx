@@ -9,7 +9,7 @@ import MediaShowcase from '@/features/ui/home/MediaShowcase';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50">
       <HeroSection />
       <InfoStrip />
       <FeaturedCollections />
@@ -17,6 +17,6 @@ export default function Home() {
       <Testimonials />
       <Newsletter />
       <MediaShowcase />
-    </main>
+    </div>
   );
 }

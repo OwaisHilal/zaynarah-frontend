@@ -1,26 +1,33 @@
+//src/features/ui/navbar/CartBadge.jsx
 import { Link } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
 import { useCartStore } from '../../cart/hooks/cartStore';
+import { cn } from '@/lib/utils';
 
-export default function CartBadge() {
+export default function CartBadge({ fullWidth = false }) {
   const cart = useCartStore((s) => s.cart);
+  const count = cart.length;
 
   return (
     <Link
       to="/cart"
-      className="relative opacity-80 hover:opacity-100 transition"
+      aria-label={`Cart with ${count} items`}
+      className={cn(
+        'relative flex items-center justify-center rounded-full border border-border-subtle transition',
+        fullWidth ? 'w-full py-3' : 'h-10 w-10',
+        'hover:bg-bg-secondary'
+      )}
     >
-      <ShoppingBag size={22} />
+      <ShoppingBag size={18} />
 
-      {cart.length > 0 && (
+      {count > 0 && (
         <span
-          className="
-            absolute -top-2 -right-2
-            bg-primary text-white text-[10px]
-            px-1.5 py-0.5 rounded-full
-          "
+          className="absolute -top-1 -right-1 min-w-[18px] h-[18px]
+            rounded-full bg-brand-rose text-white text-[10px]
+            flex items-center justify-center"
+          aria-live="polite"
         >
-          {cart.length}
+          {count}
         </span>
       )}
     </Link>

@@ -8,7 +8,7 @@ export default function TheCraftPage() {
   const ROSE = '#B76E79';
 
   return (
-    <main className="bg-white text-gray-900 min-h-screen">
+    <div className="bg-white text-gray-900 min-h-screen">
       {/* Content Section 1: The Art of Weaving */}
       <section className="max-w-6xl mx-auto px-6 py-16 flex flex-col md:flex-row items-center gap-12">
         <img
@@ -83,6 +83,6 @@ export default function TheCraftPage() {
           Explore The Collection
         </a>
       </section>
-    </main>
+    </div>
   );
 }

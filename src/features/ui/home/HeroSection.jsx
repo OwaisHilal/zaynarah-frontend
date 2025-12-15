@@ -1,3 +1,4 @@
+// src/features/ui/home/HeroSection.jsx
 import { Link } from 'react-router-dom';
 const GOLD = '#D4AF37';
 const ROSE_GOLD = '#B76E79';
@@ -25,14 +26,14 @@ export default function HeroSection() {
             </Link>
             <Link
               to="/the-craft"
-              className="px-6 py-3 rounded-full text-sm font-medium border border-gray-300 hover:border-rose-600 hover:text-rose-600 transition"
+              className="px-6 py-3 rounded-full text-sm font-medium border opacity-70 hover:opacity-100"
             >
               Learn More
             </Link>
           </div>
         </div>
 
-        <div className="rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-transform hover:scale-105">
+        <div className="rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-transform hover:scale-[1.02]">
           <img
             src="/HeroImg.jpg"
             alt="Hero"

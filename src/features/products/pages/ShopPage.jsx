@@ -95,7 +95,7 @@ export default function ShopPage() {
   }
 
   return (
-    <main className="pb-24 bg-white">
+    <div className="pb-24 bg-white">
       {/* Lux Hero / Banner */}
       <section
         className="relative h-[40vh] flex items-center"
@@ -265,6 +265,6 @@ export default function ShopPage() {
           </button>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

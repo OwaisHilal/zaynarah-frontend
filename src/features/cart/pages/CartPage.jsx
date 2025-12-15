@@ -70,7 +70,7 @@ export default function CartPage() {
   // Empty cart UI
   if (!safeCart.length) {
     return (
-      <main className="min-h-screen flex items-center justify-center px-6 py-24 bg-white">
+      <div className="min-h-screen flex items-center justify-center px-6 py-24 bg-white">
         <div className="max-w-2xl text-center">
           <h1
             className="text-5xl font-serif mb-4"
@@ -90,13 +90,13 @@ export default function CartPage() {
             Browse Collection
           </Link>
         </div>
-      </main>
+      </div>
     );
   }
 
   // Main UI
   return (
-    <main className="min-h-screen bg-white px-6 py-16">
+    <div className="min-h-screen bg-white px-6 py-16">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-12">
@@ -282,6 +282,6 @@ export default function CartPage() {
           </aside>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

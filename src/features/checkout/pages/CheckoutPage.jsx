@@ -1,14 +1,14 @@
+/// src/features/checkout/pages/CheckoutPage.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useCheckoutStore } from '../store/checkoutStore';
 import { useCart } from '../../cart/context/useCart';
 import { useUserStore } from '../../user/hooks/useUser';
+import { useCheckoutStore } from '../store/checkoutStore';
 
-import CheckoutSteps from '../components/CheckoutSteps';
+import CheckoutNavigation from '../components/CheckoutNavigation';
 import CheckoutProgress from '../components/CheckoutProgress';
 import StepContent from '../components/StepContent';
-import CheckoutNavigation from '../components/CheckoutNavigation';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -55,7 +55,6 @@ export default function CheckoutPage() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <CheckoutProgress currentStep={checkout.currentStep} steps={steps} />
-      <CheckoutSteps currentStep={checkout.currentStep} />
 
       <StepContent currentStep={checkout.currentStep} error={error} />
 

@@ -14,7 +14,7 @@ export default function ProductCard({ product }) {
   const img = product.image ?? product.images?.[0] ?? '/HeroImg.jpg';
 
   return (
-    <article className="rounded-2xl overflow-hidden bg-white border transition-transform hover:-translate-y-1 hover:shadow-xl">
+    <article className="rounded-2xl overflow-hidden bg-white border transition-transform hover:shadow-lg">
       <Link to={`/product/${pid}`}>
         <div className="w-full h-56 sm:h-64 overflow-hidden bg-gray-50">
           <img src={img} alt={title} className="w-full h-full object-cover" />
@@ -44,8 +44,8 @@ export default function ProductCard({ product }) {
             onClick={() =>
               addToCart({ id: pid, title, price: product.price, image: img })
             }
-            className="flex items-center gap-2 px-3 py-2 rounded-full"
-            style={{ background: ROSE_GOLD, color: DEEP }}
+            className="border border-[rgba(183,110,121,0.4)] hover:bg-[#B76E79]"
+            style={{ color: DEEP }}
             aria-label={`Add ${title} to cart`}
           >
             <ShoppingCart size={16} />

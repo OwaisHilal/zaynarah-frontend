@@ -1,9 +1,7 @@
+//src/features/ui/navbar/NavLinks.jsx
 import { Link } from 'react-router-dom';
 
 const navItems = [
-  { name: 'Shawls', to: '/shop?category=shawls' },
-  { name: 'Scarves', to: '/shop?category=scarves' },
-  { name: 'Accessories', to: '/shop?category=accessories' },
   { name: 'The Craft', to: '/the-craft' },
   { name: 'Contact', to: '/contact' },
 ];

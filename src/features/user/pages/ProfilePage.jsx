@@ -5,7 +5,7 @@ import UserAddresses from '../components/UserAddresses';
 
 export default function ProfilePage() {
   return (
-    <main className="min-h-screen bg-gray-50 flex flex-col items-center py-20 px-4 gap-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-20 px-4 gap-8">
       <div className="w-full max-w-4xl">
         {/* Header */}
         <div className="mb-8 text-center">
@@ -35,6 +35,6 @@ export default function ProfilePage() {
           <UserAddresses />
         </div>
       </div>
-    </main>
+    </div>
   );
 }

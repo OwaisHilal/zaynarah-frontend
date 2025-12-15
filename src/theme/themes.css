@@ -1,0 +1,29 @@
+/* src/theme/themes.css */
+
+:root {
+  /* Brand */
+  --brand-gold: 212 175 55;
+  --brand-rose: 183 110 121;
+  --brand-black: 10 10 10;
+
+  /* Brand surfaces */
+  --bg-primary: 255 248 245;
+  --bg-secondary: 253 226 228;
+  --text-primary: 33 33 33;
+  --text-secondary: 85 85 85;
+
+  /* Borders */
+  --border-subtle: 0 0 0 / 0.08;
+}
+
+/* Dark theme */
+.dark {
+  --bg-primary: 10 10 10;
+  --bg-secondary: 20 20 20;
+  --text-primary: 245 245 245;
+  --text-secondary: 180 180 180;
+
+  /* Dark mode brand mapping */
+  --primary: var(--brand-rose);
+  --accent: var(--brand-gold);
+}

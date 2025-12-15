@@ -1,3 +1,4 @@
+// src/features/ui/Layout.jsx
 import { Outlet } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import Navbar from './Navbar';

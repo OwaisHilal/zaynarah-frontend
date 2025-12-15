@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [theme, setTheme] = useState(() =>
+    document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  );
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
+    const root = document.documentElement;
+    root.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
 
@@ -17,9 +18,11 @@ export default function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+      aria-label="Toggle theme"
+      onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
+      className="opacity-60 hover:opacity-100"
     >
-      {theme === 'light' ? <Moon /> : <Sun />}
+      {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
     </Button>
   );
 }

@@ -1,29 +1,34 @@
-/* src/theme/themes.css */
-
 :root {
   /* Brand */
   --brand-gold: 212 175 55;
   --brand-rose: 183 110 121;
-  --brand-black: 10 10 10;
 
-  /* Brand surfaces */
+  /* Light backgrounds */
   --bg-primary: 255 248 245;
   --bg-secondary: 253 226 228;
-  --text-primary: 33 33 33;
-  --text-secondary: 85 85 85;
+
+  /* Light text */
+  --text-primary: 28 28 28;
+  --text-secondary: 90 90 90;
 
   /* Borders */
   --border-subtle: 0 0 0 / 0.08;
 }
 
-/* Dark theme */
+/* DARK MODE */
 .dark {
-  --bg-primary: 10 10 10;
-  --bg-secondary: 20 20 20;
-  --text-primary: 245 245 245;
-  --text-secondary: 180 180 180;
+  /* Backgrounds */
+  --bg-primary: 14 14 14;
+  --bg-secondary: 22 22 22;
 
-  /* Dark mode brand mapping */
-  --primary: var(--brand-rose);
-  --accent: var(--brand-gold);
+  /* Text */
+  --text-primary: 235 235 235;
+  --text-secondary: 165 165 165;
+
+  /* Brand accents (softened) */
+  --brand-gold: 198 166 66;
+  --brand-rose: 176 115 124;
+
+  /* Borders */
+  --border-subtle: 255 255 255 / 0.08;
 }

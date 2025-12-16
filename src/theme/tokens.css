@@ -1,0 +1,77 @@
+/* src/theme/tokens.css */
+
+/* ============================= */
+/* ZAYNARAH BRAND TOKENS */
+/* ============================= */
+:root {
+  /* Brand */
+  --brand-gold: 212 175 55; /* #D4AF37 */
+  --brand-rose: 183 110 121; /* #B76E79 */
+  --brand-black: 10 10 10;
+
+  /* Light Backgrounds */
+  --bg-primary: 255 248 245;
+  --bg-secondary: 253 226 228;
+
+  /* Text */
+  --text-primary: 33 33 33;
+  --text-secondary: 85 85 85;
+
+  /* Borders */
+  --border-subtle: 0 0 0 / 0.08;
+
+  /* ============================= */
+  /* MAP TO SHADCN TOKENS */
+  /* ============================= */
+  --background: rgb(var(--bg-primary));
+  --foreground: rgb(var(--text-primary));
+
+  --card: rgb(255 255 255);
+  --card-foreground: rgb(var(--text-primary));
+
+  --popover: rgb(255 255 255);
+  --popover-foreground: rgb(var(--text-primary));
+
+  --primary: rgb(var(--brand-gold));
+  --primary-foreground: rgb(var(--brand-black));
+
+  --secondary: rgb(var(--bg-secondary));
+  --secondary-foreground: rgb(var(--text-primary));
+
+  --muted: rgb(245 245 245);
+  --muted-foreground: rgb(var(--text-secondary));
+
+  --border: rgb(0 0 0 / 0.08);
+  --input: rgb(0 0 0 / 0.08);
+  --ring: rgb(var(--brand-gold));
+}
+
+/* ============================= */
+/* DARK MODE */
+/* ============================= */
+.dark {
+  --bg-primary: 10 10 10;
+  --bg-secondary: 20 20 20;
+
+  --text-primary: 245 245 245;
+  --text-secondary: 180 180 180;
+
+  --background: rgb(var(--bg-primary));
+  --foreground: rgb(var(--text-primary));
+
+  --card: rgb(20 20 20);
+  --card-foreground: rgb(var(--text-primary));
+
+  --popover: rgb(20 20 20);
+  --popover-foreground: rgb(var(--text-primary));
+
+  --primary: rgb(var(--brand-gold));
+  --primary-foreground: rgb(10 10 10);
+
+  --secondary: rgb(30 30 30);
+  --secondary-foreground: rgb(var(--text-primary));
+
+  --border: rgb(255 255 255 / 0.08);
+  --input: rgb(255 255 255 / 0.12);
+  --ring: rgb(var(--brand-gold));
+}

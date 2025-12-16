@@ -1,3 +1,5 @@
+//src/features/products/components/ProductPage/ProductDetails.jsx
+
 import React, { useState } from 'react';
 
 const ROSE_GOLD = '#B76E79';

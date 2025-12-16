@@ -19,6 +19,7 @@ import OrderSuccessPage from './features/checkout/pages/OrderSuccess';
 import TheCraftPage from './pages/TheCraft';
 
 import SearchModal from '@/features/search/components/SearchModal';
+import { ToastProvider } from '@/features/ui/toast';
 
 function ProtectedRoute({ children }) {
   const { user } = useUserStore();
@@ -30,49 +31,51 @@ export default function App() {
   return (
     <BrowserRouter>
       <CartProvider>
-        <SearchProvider>
-          <SearchModal />
-          <Routes>
-            <Route element={<Layout />}>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/shop" element={<ShopPage />} />
-              <Route path="/product/:id" element={<ProductPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/the-craft" element={<TheCraftPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
+        <ToastProvider>
+          <SearchProvider>
+            <SearchModal />
+            <Routes>
+              <Route element={<Layout />}>
+                {/* Public Routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/shop" element={<ShopPage />} />
+                <Route path="/product/:id" element={<ProductPage />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/the-craft" element={<TheCraftPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
 
-              {/* Protected Routes */}
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Protected Routes */}
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/checkout"
-                element={
-                  <ProtectedRoute>
-                    <CheckoutPage />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/checkout"
+                  element={
+                    <ProtectedRoute>
+                      <CheckoutPage />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/checkout/success"
-                element={
-                  <ProtectedRoute>
-                    <OrderSuccessPage />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
-          </Routes>
-        </SearchProvider>
+                <Route
+                  path="/checkout/success"
+                  element={
+                    <ProtectedRoute>
+                      <OrderSuccessPage />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
+            </Routes>
+          </SearchProvider>
+        </ToastProvider>
       </CartProvider>
     </BrowserRouter>
   );

@@ -1,68 +1,74 @@
-// src/features/ui/Footer.jsx
-import { Separator } from '@/components/ui/separator';
 import { Link } from 'react-router-dom';
-import {
-  FaInstagram,
-  FaFacebookF,
-  FaTwitter,
-  FaPinterestP,
-} from 'react-icons/fa';
-
-const GOLD = '#D4AF37';
-const LIGHT_ROSE = '#FDE2E4';
-const LIGHT_BG = '#FFF8F5'; // soft off-white
+import { Separator } from '@/components/ui/separator';
+import { FaInstagram, FaFacebookF, FaTwitter } from 'react-icons/fa';
 
 export default function Footer() {
   return (
-    <footer className="mt-20" style={{ background: LIGHT_BG, color: '#333' }}>
-      {/* Top Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-4 gap-10">
+    <footer
+      className="
+        mt-24
+        bg-bg-primary
+        text-text-primary
+        border-t border-border
+      "
+      aria-labelledby="footer-heading"
+    >
+      <h2 id="footer-heading" className="sr-only">
+        Zaynarah Footer
+      </h2>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-4 gap-12">
         {/* Brand */}
-        <div>
-          <h2
-            className="text-3xl font-serif font-semibold mb-4"
-            style={{ color: GOLD }}
-          >
+        <div className="md:col-span-2">
+          <h3 className="text-3xl font-serif font-semibold text-brand-gold mb-4">
             Zaynarah
-          </h2>
-          <p className="text-gray-700 leading-relaxed max-w-sm">
-            Handcrafted Kashmiri pashmina shawls — a heritage of artistry and
-            quiet luxury.
+          </h3>
+
+          <p className="max-w-md text-text-secondary leading-relaxed">
+            Handcrafted Kashmiri Pashmina, woven by master artisans using
+            centuries-old techniques. Quiet luxury, rooted in heritage.
           </p>
+
+          {/* Trust Badges */}
+          <ul className="mt-6 space-y-2 text-sm text-text-secondary">
+            <li>• 100% Authentic Kashmiri Pashmina</li>
+            <li>• Free Shipping on Orders Over ₹1999</li>
+            <li>• Easy Returns & Secure Checkout</li>
+          </ul>
         </div>
 
-        {/* Explore */}
+        {/* Shop */}
         <div>
-          <h3
-            className="text-lg font-semibold mb-4"
-            style={{ color: LIGHT_ROSE }}
-          >
-            Explore
-          </h3>
-          <ul className="space-y-2 text-gray-700">
+          <h4 className="text-sm font-semibold uppercase tracking-widest text-text-primary mb-4">
+            Shop
+          </h4>
+          <ul className="space-y-3 text-sm">
             <li>
-              <Link
-                to="/"
-                className="hover:text-gold transition-colors"
-                style={{ color: '#555' }}
-              >
-                Home
+              <Link to="/shop" className="hover:text-brand-gold transition">
+                All Products
               </Link>
             </li>
             <li>
               <Link
-                to="/shop"
-                className="hover:text-gold transition-colors"
-                style={{ color: '#555' }}
+                to="/shop?category=shawls"
+                className="hover:text-brand-gold transition"
               >
-                Shop
+                Shawls
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/shop?category=stoles"
+                className="hover:text-brand-gold transition"
+              >
+                Stoles
               </Link>
             </li>
             <li>
               <Link
                 to="/the-craft"
-                className="hover:text-gold transition-colors"
-                style={{ color: '#555' }}
+                className="hover:text-brand-gold transition"
               >
                 The Craft
               </Link>
@@ -72,84 +78,76 @@ export default function Footer() {
 
         {/* Help */}
         <div>
-          <h3
-            className="text-lg font-semibold mb-4"
-            style={{ color: LIGHT_ROSE }}
-          >
+          <h4 className="text-sm font-semibold uppercase tracking-widest text-text-primary mb-4">
             Help
-          </h3>
-          <ul className="space-y-2 text-gray-700">
+          </h4>
+          <ul className="space-y-3 text-sm">
             <li>
-              <a
-                href="/shipping"
-                className="hover:text-gold transition-colors"
-                style={{ color: '#555' }}
-              >
+              <Link to="/shipping" className="hover:text-brand-gold transition">
                 Shipping
-              </a>
+              </Link>
             </li>
             <li>
-              <a
-                href="/returns"
-                className="hover:text-gold transition-colors"
-                style={{ color: '#555' }}
-              >
+              <Link to="/returns" className="hover:text-brand-gold transition">
                 Returns
-              </a>
+              </Link>
+            </li>
+            <li>
+              <Link to="/support" className="hover:text-brand-gold transition">
+                Support
+              </Link>
             </li>
             <li>
               <a
-                href="/support"
-                className="hover:text-gold transition-colors"
-                style={{ color: '#555' }}
+                href="mailto:support@zaynarah.com"
+                className="hover:text-brand-gold transition"
               >
-                Support
+                support@zaynarah.com
               </a>
             </li>
           </ul>
         </div>
+      </div>
 
-        {/* Contact */}
-        <div>
-          <h3
-            className="text-lg font-semibold mb-4"
-            style={{ color: LIGHT_ROSE }}
-          >
-            Connect
-          </h3>
-          <p>
-            Email:{' '}
+      {/* Social + Divider */}
+      <div className="max-w-7xl mx-auto px-6">
+        <Separator />
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-8">
+          {/* Social */}
+          <div className="flex items-center gap-5 text-lg text-text-secondary">
             <a
-              href="mailto:support@zaynarah.com"
-              className="hover:text-gold underline transition-colors"
+              href="#"
+              aria-label="Instagram"
+              className="hover:text-brand-gold transition"
             >
-              support@zaynarah.com
+              <FaInstagram />
             </a>
-          </p>
-          <p className="mt-2">Phone: +91 90000 00000</p>
-
-          {/* Social Media Icons */}
-          <div className="flex items-center gap-4 mt-4">
-            {[FaInstagram, FaFacebookF, FaTwitter].map((Icon, i) => (
-              <a
-                key={i}
-                href="#"
-                className="text-gray-600 hover:text-rose-400 transition-colors text-lg"
-                aria-label="Social Media"
-              >
-                <Icon />
-              </a>
-            ))}
+            <a
+              href="#"
+              aria-label="Facebook"
+              className="hover:text-brand-gold transition"
+            >
+              <FaFacebookF />
+            </a>
+            <a
+              href="#"
+              aria-label="Twitter"
+              className="hover:text-brand-gold transition"
+            >
+              <FaTwitter />
+            </a>
           </div>
+
+          {/* Payments / Security hint */}
+          <p className="text-xs text-text-secondary">
+            Secure payments • Trusted craftsmanship • Since Kashmir
+          </p>
         </div>
       </div>
 
-      {/* Separator */}
-      <Separator className="border-gray-200" />
-
       {/* Bottom */}
-      <div className="text-center py-6 text-sm text-gray-500">
-        © {new Date().getFullYear()} Zaynarah — All rights reserved.
+      <div className="text-center text-xs text-text-secondary pb-8">
+        © {new Date().getFullYear()} Zaynarah. All rights reserved.
       </div>
     </footer>
   );

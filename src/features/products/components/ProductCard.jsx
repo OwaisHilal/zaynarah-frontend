@@ -1,55 +1,77 @@
-// src/features/products/components/ProductCard.jsx
 import { Link } from 'react-router-dom';
-import { useCartStore } from '../../cart/hooks/cartStore';
-import { ShoppingCart } from 'lucide-react';
-
-const ROSE_GOLD = '#B76E79';
-const DEEP = '#0A0A0A';
+import { useState } from 'react';
+import { Check, ShoppingBag } from 'lucide-react';
+import { useCartStore } from '@/features/cart/hooks/cartStore';
+import { useToast } from '@/features/ui/toast/context/useToast';
+import { cn } from '@/lib/utils';
 
 export default function ProductCard({ product }) {
   const addToCart = useCartStore((s) => s.addToCart);
+  const { showToast } = useToast();
+  const [added, setAdded] = useState(false);
 
-  const pid = product.id ?? product._id;
-  const title = product.title ?? product.name ?? 'Untitled';
-  const img = product.image ?? product.images?.[0] ?? '/HeroImg.jpg';
+  const id = product._id || product.id;
+  const image = product.image || product.images?.[0];
+
+  const handleAdd = () => {
+    addToCart({
+      id,
+      title: product.title,
+      price: product.price,
+      image,
+      qty: 1,
+    });
+
+    setAdded(true);
+    showToast('Added to cart');
+
+    setTimeout(() => setAdded(false), 1400);
+  };
 
   return (
-    <article className="rounded-2xl overflow-hidden bg-white border transition-transform hover:shadow-lg">
-      <Link to={`/product/${pid}`}>
-        <div className="w-full h-56 sm:h-64 overflow-hidden bg-gray-50">
-          <img src={img} alt={title} className="w-full h-full object-cover" />
+    <article className="group bg-white rounded-2xl overflow-hidden border transition hover:shadow-xl">
+      <Link to={`/product/${id}`}>
+        <div className="h-64 overflow-hidden">
+          <img
+            src={image}
+            alt={product.title}
+            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+          />
         </div>
       </Link>
 
-      <div className="p-4">
-        <h3 className="text-lg font-semibold" style={{ color: DEEP }}>
-          <Link to={`/product/${pid}`} className="hover:underline">
-            {title}
-          </Link>
+      <div className="p-4 space-y-3">
+        <h3 className="font-medium text-lg">
+          <Link to={`/product/${id}`}>{product.title}</Link>
         </h3>
 
-        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+        <p className="text-sm text-text-secondary line-clamp-2">
           {product.description}
         </p>
 
-        <div className="mt-4 flex items-center justify-between">
-          <div>
-            <div className="text-lg font-bold" style={{ color: ROSE_GOLD }}>
-              ₹{product.price}
-            </div>
-            <div className="text-xs text-gray-400">Inclusive of taxes</div>
-          </div>
+        <div className="flex items-center justify-between pt-2">
+          <span className="font-semibold">₹{product.price}</span>
 
           <button
-            onClick={() =>
-              addToCart({ id: pid, title, price: product.price, image: img })
-            }
-            className="border border-[rgba(183,110,121,0.4)] hover:bg-[#B76E79]"
-            style={{ color: DEEP }}
-            aria-label={`Add ${title} to cart`}
+            onClick={handleAdd}
+            disabled={added}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 rounded-full text-sm border transition-all',
+              'active:scale-95',
+              added
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'hover:bg-bg-secondary border-border'
+            )}
           >
-            <ShoppingCart size={16} />
-            Add
+            {added ? (
+              <>
+                <Check size={14} /> In cart
+              </>
+            ) : (
+              <>
+                <ShoppingBag size={14} /> Add to cart
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -1,34 +1,7 @@
+/* Theme variables are now centralized in tokens.css */
+/* This file is intentionally minimal */
+
 :root {
-  /* Brand */
-  --brand-gold: 212 175 55;
-  --brand-rose: 183 110 121;
-
-  /* Light backgrounds */
-  --bg-primary: 255 248 245;
-  --bg-secondary: 253 226 228;
-
-  /* Light text */
-  --text-primary: 28 28 28;
-  --text-secondary: 90 90 90;
-
-  /* Borders */
-  --border-subtle: 0 0 0 / 0.08;
 }
-
-/* DARK MODE */
 .dark {
-  /* Backgrounds */
-  --bg-primary: 14 14 14;
-  --bg-secondary: 22 22 22;
-
-  /* Text */
-  --text-primary: 235 235 235;
-  --text-secondary: 165 165 165;
-
-  /* Brand accents (softened) */
-  --brand-gold: 198 166 66;
-  --brand-rose: 176 115 124;
-
-  /* Borders */
-  --border-subtle: 255 255 255 / 0.08;
 }

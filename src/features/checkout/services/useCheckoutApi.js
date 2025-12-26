@@ -1,3 +1,4 @@
+//src/features/checkout/services/useCheckoutApi.js
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
@@ -18,9 +19,6 @@ function normalizeError(err) {
   );
 }
 
-/* ----------------------------------------------
-   STRIPE SESSION NORMALIZER
----------------------------------------------- */
 function normalizeStripeResponse(data) {
   return {
     sessionId: data?.sessionId || data?.id || data?.checkoutSessionId || null,
@@ -32,9 +30,6 @@ function normalizeStripeResponse(data) {
   };
 }
 
-/* ----------------------------------------------
-   RAZORPAY ORDER NORMALIZER
----------------------------------------------- */
 function normalizeRazorpayResponse(data) {
   return {
     orderId: data?.orderId || data?.id || data?.order_id || null,
@@ -44,9 +39,6 @@ function normalizeRazorpayResponse(data) {
   };
 }
 
-/* ----------------------------------------------
-   CREATE ORDER
----------------------------------------------- */
 export async function placeOrderAPI(payload) {
   try {
     const res = await api.post('/orders/create', payload);
@@ -57,9 +49,6 @@ export async function placeOrderAPI(payload) {
   }
 }
 
-/* ----------------------------------------------
-   STRIPE SESSION
----------------------------------------------- */
 export async function createStripeSessionAPI(orderId) {
   try {
     const res = await api.post('/payments/stripe-session', { orderId });
@@ -70,9 +59,6 @@ export async function createStripeSessionAPI(orderId) {
   }
 }
 
-/* ----------------------------------------------
-   RAZORPAY ORDER
----------------------------------------------- */
 export async function createRazorpayOrderAPI(orderId) {
   try {
     const res = await api.post('/payments/razorpay-order', { orderId });
@@ -83,9 +69,6 @@ export async function createRazorpayOrderAPI(orderId) {
   }
 }
 
-/* ----------------------------------------------
-   VERIFY RAZORPAY PAYMENT
----------------------------------------------- */
 export async function verifyRazorpayPaymentAPI(payload) {
   try {
     const res = await api.post('/payments/razorpay-verify', payload);
@@ -96,9 +79,6 @@ export async function verifyRazorpayPaymentAPI(payload) {
   }
 }
 
-/* ----------------------------------------------
-   SHIPPING METHODS
----------------------------------------------- */
 export async function getShippingMethods(address) {
   try {
     const res = await api.post('/shipping/methods', { address });
@@ -109,9 +89,6 @@ export async function getShippingMethods(address) {
   }
 }
 
-/* ----------------------------------------------
-   GET ORDER
----------------------------------------------- */
 export async function getOrderAPI(orderId) {
   try {
     const res = await api.get(`/orders/${orderId}`);

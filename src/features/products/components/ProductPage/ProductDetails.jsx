@@ -1,65 +1,60 @@
-//src/features/products/components/ProductPage/ProductDetails.jsx
+// src/features/products/components/ProductPage/ProductDetails.jsx
 
-import React, { useState } from 'react';
-
-const ROSE_GOLD = '#B76E79';
-const DEEP = '#0A0A0A';
-
-function Stars({ rating = 0 }) {
-  const full = Math.floor(rating);
-  const half = rating - full >= 0.5;
-  const empty = 5 - full - (half ? 1 : 0);
-
-  return (
-    <div className="flex items-center gap-1" aria-hidden>
-      {Array.from({ length: full }).map((_, i) => (
-        <span key={`f-${i}`} className="text-yellow-500">
-          ★
-        </span>
-      ))}
-      {half && <span className="text-yellow-500">☆</span>}
-      {Array.from({ length: empty }).map((_, i) => (
-        <span key={`e-${i}`} className="text-yellow-300">
-          ☆
-        </span>
-      ))}
-    </div>
-  );
-}
+import { ShieldCheck, Truck, RefreshCcw } from 'lucide-react';
 
 export default function ProductDetails({ product }) {
-  // Generate reviews count only once when component mounts
-  const [reviewsCount] = useState(() => Math.floor(Math.random() * 40) + 5);
-
   return (
-    <div>
-      <h1
-        className="text-3xl md:text-4xl font-serif font-semibold mb-2"
-        style={{ color: DEEP }}
-      >
-        {product?.title}
-      </h1>
+    <section className="space-y-6">
+      {/* Title */}
+      <header>
+        <h1 className="text-3xl md:text-4xl font-serif font-semibold leading-tight">
+          {product.title}
+        </h1>
+      </header>
 
-      <div className="flex items-center gap-4 mb-4">
-        <div>
-          <div
-            className="text-2xl md:text-3xl font-bold"
-            style={{ color: ROSE_GOLD }}
-          >
-            ₹{product?.price}
-          </div>
-          <div className="text-xs text-gray-500">Inclusive of taxes</div>
+      {/* Price */}
+      <div>
+        <div className="text-2xl md:text-3xl font-semibold">
+          ₹{product.price}
         </div>
-
-        <div className="ml-auto flex items-center gap-3">
-          <Stars rating={product?.rating} />
-          <div className="text-sm text-gray-500">({reviewsCount})</div>
-        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Inclusive of all taxes
+        </p>
       </div>
 
-      <p className="text-gray-700 mb-6 leading-relaxed">
-        {product?.description}
+      {/* Trust Stack */}
+      <ul className="space-y-3 text-sm">
+        <li className="flex items-start gap-3">
+          <ShieldCheck size={18} className="mt-0.5 text-primary" />
+          <span>
+            <strong>Authentic Kashmiri Pashmina</strong> — sourced directly from
+            certified artisans.
+          </span>
+        </li>
+
+        <li className="flex items-start gap-3">
+          <Truck size={18} className="mt-0.5 text-primary" />
+          <span>
+            <strong>Ships within 24–48 hours</strong> · Free delivery on orders
+            over ₹1999.
+          </span>
+        </li>
+
+        <li className="flex items-start gap-3">
+          <RefreshCcw size={18} className="mt-0.5 text-primary" />
+          <span>
+            <strong>7-day easy returns</strong> — no questions asked.
+          </span>
+        </li>
+      </ul>
+
+      {/* Description */}
+      <p className="text-sm leading-relaxed text-muted-foreground pt-2">
+        {product.description}
       </p>
-    </div>
+
+      {/* Divider */}
+      <div className="h-px bg-border mt-4" />
+    </section>
   );
 }

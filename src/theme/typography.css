@@ -1,0 +1,17 @@
+/* ============================= */
+/* TYPOGRAPHY — EDITORIAL */
+/* ============================= */
+
+body {
+  font-feature-settings: 'kern', 'liga';
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+}
+
+p {
+  line-height: 1.7;
+}

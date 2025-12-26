@@ -1,4 +1,4 @@
-/// src/features/checkout/pages/CheckoutPage.jsx
+// src/features/checkout/pages/CheckoutPage.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -27,12 +27,25 @@ export default function CheckoutPage() {
   ];
 
   useEffect(() => {
-    if (user) checkout.setUser(user);
-  }, [user]);
+    if (!user) {
+      navigate('/login?from=/checkout', { replace: true });
+      return;
+    }
+
+    if (!user.emailVerified) {
+      navigate('/verify-email', { replace: true });
+      return;
+    }
+
+    checkout.setUser(user);
+  }, [user, checkout, navigate]);
 
   const handleNext = () => {
     const msg = checkout.validateStep(checkout.currentStep);
-    if (msg) return setError(msg);
+    if (msg) {
+      setError(msg);
+      return;
+    }
     setError('');
     checkout.nextStep();
   };
@@ -43,11 +56,20 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    if (!user?.emailVerified) {
+      setError('Please verify your email before placing an order.');
+      return;
+    }
+
     try {
       setError('');
       const order = await checkout.placeOrderAndPay({ cart, cartTotal });
       navigate('/checkout/success', { state: { order } });
     } catch (err) {
+      if (err?.message?.includes('verify')) {
+        navigate('/verify-email');
+        return;
+      }
       setError(err.message || 'Order failed.');
     }
   };

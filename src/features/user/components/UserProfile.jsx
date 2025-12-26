@@ -1,4 +1,3 @@
-// src/features/user/components/UserProfile.jsx
 import { useState, useEffect } from 'react';
 import { useUserStore } from '../hooks/useUser';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -11,7 +10,8 @@ const ROSE_GOLD = '#B76E79';
 const GOLD = '#D4AF37';
 
 export default function UserProfile() {
-  const { user, loading, fetchProfile, logout } = useUserStore();
+  const { user, loading, fetchProfile, updateProfile, changePassword, logout } =
+    useUserStore();
 
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -21,6 +21,7 @@ export default function UserProfile() {
   const [updateError, setUpdateError] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
 
+  // Sync local state when user changes
   useEffect(() => {
     setName(user?.name || '');
     setEmail(user?.email || '');
@@ -37,12 +38,34 @@ export default function UserProfile() {
     setSuccessMsg('');
 
     try {
-      await new Promise((res) => setTimeout(res, 500)); // simulate API
-      fetchProfile();
-      setPassword('');
+      // Update basic profile fields
+      if (name !== user.name || email !== user.email) {
+        await updateProfile({ name, email });
+      }
+
+      // Update password if provided
+      if (password) {
+        if (password.length < 8) {
+          throw new Error('Password must be at least 8 characters');
+        }
+
+        await changePassword({
+          oldPassword: password, // adjust if you add separate old/new fields later
+          newPassword: password,
+        });
+
+        setPassword('');
+      }
+
+      // Profile picture is UI-only for now (no backend upload yet)
+      // Keeping preview logic intact
+
+      await fetchProfile();
       setSuccessMsg('Profile updated successfully!');
     } catch (err) {
-      setUpdateError(err.message);
+      setUpdateError(
+        err.response?.data?.message || err.message || 'Update failed'
+      );
     } finally {
       setUpdateLoading(false);
     }
@@ -77,7 +100,7 @@ export default function UserProfile() {
             {profilePic ? (
               <AvatarImage src={profilePic} />
             ) : (
-              <AvatarFallback>{name[0]}</AvatarFallback>
+              <AvatarFallback>{name?.[0] || 'U'}</AvatarFallback>
             )}
           </Avatar>
           <div className="flex gap-2 flex-wrap items-center">
@@ -141,6 +164,7 @@ export default function UserProfile() {
         {/* Update Button */}
         {updateError && <p className="text-red-600">{updateError}</p>}
         {successMsg && <p className="text-green-600">{successMsg}</p>}
+
         <Button
           onClick={handleProfileUpdate}
           disabled={updateLoading || !isModified}

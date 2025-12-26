@@ -5,88 +5,28 @@ import { useCartStore } from '../../cart/hooks/cartStore';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 
-// -----------------------
-// API HELPERS
-// -----------------------
-const authenticated = () => ({
+const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`,
 });
 
-// AUTH
-const loginUserApi = async ({ email, password }) => {
-  const res = await axios.post(`${API_BASE}/auth/login`, { email, password });
-  return res.data; // { user, token }
-};
-
-const signupUserApi = async ({ name, email, password }) => {
-  const res = await axios.post(`${API_BASE}/auth/register`, {
-    name,
-    email,
-    password,
-  });
-  return res.data;
-};
-
-const fetchUserProfileApi = async () => {
-  const res = await axios.get(`${API_BASE}/users/me`, {
-    headers: authenticated(),
-  });
-  return res.data; // { user }
-};
-
-// ADDRESSES
-const getAddressesApi = async () => {
-  const res = await axios.get(`${API_BASE}/users/addresses`, {
-    headers: authenticated(),
-  });
-  return res.data; // { addresses }
-};
-
-const addAddressApi = async (data) => {
-  const res = await axios.post(`${API_BASE}/users/addresses`, data, {
-    headers: authenticated(),
-  });
-  return res.data; // { address }
-};
-
-const updateAddressApi = async (id, data) => {
-  const res = await axios.put(`${API_BASE}/users/addresses/${id}`, data, {
-    headers: authenticated(),
-  });
-  return res.data; // { address }
-};
-
-const deleteAddressApi = async (id) => {
-  const res = await axios.delete(`${API_BASE}/users/addresses/${id}`, {
-    headers: authenticated(),
-  });
-  return res.data;
-};
-
-// -----------------------
-// ZUSTAND STORE
-// -----------------------
 export const useUserStore = create((set, get) => ({
   user: JSON.parse(localStorage.getItem('user')) || null,
   loading: false,
   error: null,
   addresses: [],
 
-  // -----------------------
-  // AUTH: LOGIN
-  // -----------------------
+  /* =====================
+     AUTH
+  ====================== */
   login: async (credentials) => {
     set({ loading: true, error: null });
-
     try {
-      const { user, token } = await loginUserApi(credentials);
+      const { data } = await axios.post(`${API_BASE}/auth/login`, credentials);
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
-      set({ user, loading: false });
-
-      // merge cart
+      set({ user: data.user, loading: false });
       await useCartStore.getState().mergeCartOnLogin();
     } catch (err) {
       set({
@@ -96,20 +36,15 @@ export const useUserStore = create((set, get) => ({
     }
   },
 
-  // -----------------------
-  // AUTH: SIGNUP
-  // -----------------------
   signup: async (data) => {
     set({ loading: true, error: null });
-
     try {
-      const { user, token } = await signupUserApi(data);
+      const res = await axios.post(`${API_BASE}/auth/register`, data);
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      set({ user, loading: false });
-
+      set({ user: res.data.user, loading: false });
       await useCartStore.getState().mergeCartOnLogin();
     } catch (err) {
       set({
@@ -119,29 +54,25 @@ export const useUserStore = create((set, get) => ({
     }
   },
 
-  // -----------------------
-  // LOGOUT
-  // -----------------------
   logout: () => {
-    set({ user: null, addresses: [] });
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-
+    set({ user: null, addresses: [] });
     useCartStore.getState().clearCartOnLogout();
   },
 
-  // -----------------------
-  // PROFILE
-  // -----------------------
+  /* =====================
+     PROFILE
+  ====================== */
   fetchProfile: async () => {
     set({ loading: true, error: null });
-
     try {
-      const { user } = await fetchUserProfileApi();
+      const res = await axios.get(`${API_BASE}/users/me`, {
+        headers: authHeaders(),
+      });
 
-      localStorage.setItem('user', JSON.stringify(user));
-
-      set({ user, loading: false });
+      localStorage.setItem('user', JSON.stringify(res.data));
+      set({ user: res.data, loading: false });
     } catch (err) {
       set({
         error: err.response?.data?.message || 'Failed to load profile',
@@ -150,54 +81,76 @@ export const useUserStore = create((set, get) => ({
     }
   },
 
-  // -----------------------
-  // ADDRESS CRUD
-  // -----------------------
+  updateProfile: async ({ name, email }) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await axios.put(
+        `${API_BASE}/users/me`,
+        { name, email },
+        { headers: authHeaders() }
+      );
+
+      localStorage.setItem('user', JSON.stringify(res.data));
+      set({ user: res.data, loading: false });
+    } catch (err) {
+      set({
+        error: err.response?.data?.message || 'Profile update failed',
+        loading: false,
+      });
+      throw err;
+    }
+  },
+
+  changePassword: async ({ oldPassword, newPassword }) => {
+    await axios.put(
+      `${API_BASE}/users/me/change-password`,
+      { oldPassword, newPassword },
+      { headers: authHeaders() }
+    );
+  },
+
+  /* =====================
+     ADDRESSES
+  ====================== */
   fetchAddresses: async () => {
     try {
-      const { addresses } = await getAddressesApi();
-      set({ addresses });
-    } catch (err) {
+      const res = await axios.get(`${API_BASE}/users/addresses`, {
+        headers: authHeaders(),
+      });
+      set({ addresses: res.data });
+    } catch {
       set({ error: 'Failed to fetch addresses' });
     }
   },
 
   addAddress: async (data) => {
-    try {
-      const { address } = await addAddressApi(data);
-      set({ addresses: [...get().addresses, address] });
-    } catch (err) {
-      set({ error: 'Failed to add address' });
-    }
+    const res = await axios.post(`${API_BASE}/users/addresses`, data, {
+      headers: authHeaders(),
+    });
+    set({ addresses: [...get().addresses, res.data] });
   },
 
   updateAddress: async (id, data) => {
-    try {
-      const { address } = await updateAddressApi(id, data);
-
-      set({
-        addresses: get().addresses.map((a) => (a._id === id ? address : a)),
-      });
-    } catch (err) {
-      set({ error: 'Failed to update address' });
-    }
+    const res = await axios.put(`${API_BASE}/users/addresses/${id}`, data, {
+      headers: authHeaders(),
+    });
+    set({
+      addresses: get().addresses.map((a) => (a._id === id ? res.data : a)),
+    });
   },
 
   deleteAddress: async (id) => {
-    try {
-      await deleteAddressApi(id);
-
-      set({
-        addresses: get().addresses.filter((a) => a._id !== id),
-      });
-    } catch (err) {
-      set({ error: 'Failed to delete address' });
-    }
+    await axios.delete(`${API_BASE}/users/addresses/${id}`, {
+      headers: authHeaders(),
+    });
+    set({
+      addresses: get().addresses.filter((a) => a._id !== id),
+    });
   },
 
-  // -----------------------
-  // ROLE HELPERS
-  // -----------------------
+  /* =====================
+     ROLE HELPERS
+  ====================== */
   isAdmin: () => get().user?.role === 'admin',
   isCustomer: () => get().user?.role === 'customer',
 }));

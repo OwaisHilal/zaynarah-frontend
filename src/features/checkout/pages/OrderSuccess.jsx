@@ -4,47 +4,40 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '../utils/checkoutHelpers';
+import { useCart } from '@/features/cart/context/useCart';
 
 export default function OrderSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { clearCartOnLogout } = useCart();
   const [order, setOrder] = useState(null);
 
   useEffect(() => {
-    // 1. Prefer order passed via navigate state
     if (location.state?.order) {
+      localStorage.setItem('lastOrder', JSON.stringify(location.state.order));
       setOrder(location.state.order);
+      clearCartOnLogout();
       return;
     }
 
-    // 2. Fallback from localStorage (Stripe redirect)
-    const savedOrder = localStorage.getItem('lastOrder');
-    if (savedOrder) {
-      setOrder(JSON.parse(savedOrder));
+    const saved = localStorage.getItem('lastOrder');
+    if (saved) {
+      setOrder(JSON.parse(saved));
+      clearCartOnLogout();
     }
-  }, [location.state]);
+  }, [location.state, clearCartOnLogout]);
 
   if (!order) {
     return (
       <div className="max-w-3xl mx-auto p-6">
-        <Card className="shadow-lg border border-yellow-500 mt-6">
+        <Card className="border border-yellow-500">
           <CardHeader>
             <h2 className="text-2xl font-bold text-yellow-600">
               No Order Found
             </h2>
           </CardHeader>
           <CardContent className="text-center flex flex-col gap-4">
-            <p className="text-gray-700">
-              We could not find your order details. Please check your orders
-              page or contact support.
-            </p>
-
-            <Button
-              className="bg-rose-600 hover:bg-rose-700 text-white"
-              onClick={() => navigate('/shop')}
-            >
-              Go to Shop
-            </Button>
+            <Button onClick={() => navigate('/shop')}>Go to Shop</Button>
           </CardContent>
         </Card>
       </div>
@@ -53,59 +46,34 @@ export default function OrderSuccess() {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <Card className="shadow-lg border border-green-500 mt-6">
+      <Card className="border border-green-500">
         <CardHeader>
           <h2 className="text-2xl font-bold text-green-600">
-            🎉 Order Placed Successfully!
+            Order Placed Successfully
           </h2>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-4 text-center">
-          <p className="text-gray-700">
-            Thank you for shopping with{' '}
-            <span className="font-semibold">Zaynarah</span>. Your order has been
-            confirmed.
-          </p>
-
-          <div className="bg-gray-100 rounded-md p-4 text-left border border-gray-300">
+          <div className="bg-gray-100 p-4 text-left">
             <p>
-              <span className="font-semibold">Order ID:</span> {order._id}
+              <strong>Order ID:</strong> {order._id}
             </p>
             <p>
-              <span className="font-semibold">Total:</span>{' '}
-              {formatCurrency(order.total)}
+              <strong>Total:</strong>{' '}
+              {formatCurrency(order.cartTotal?.grand || 0)}
             </p>
             <p>
-              <span className="font-semibold">Payment Method:</span>{' '}
+              <strong>Payment Method:</strong>{' '}
               {order.paymentMethod?.toUpperCase()}
             </p>
             <p>
-              <span className="font-semibold">Status:</span>{' '}
-              {order.status || 'Pending'}
+              <strong>Status:</strong> {order.status}
             </p>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-4 justify-center mt-6">
-            <Button
-              onClick={() => navigate('/orders')}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              View Orders
-            </Button>
-
-            <Button
-              onClick={() => navigate('/shop')}
-              className="bg-rose-600 hover:bg-rose-700 text-white"
-            >
-              Continue Shopping
-            </Button>
-
-            <Button
-              onClick={() => navigate('/')}
-              className="bg-gray-600 hover:bg-gray-700 text-white"
-            >
-              Go to Home
-            </Button>
+          <div className="flex gap-3 justify-center">
+            <Button onClick={() => navigate('/profile')}>View Orders</Button>
+            <Button onClick={() => navigate('/shop')}>Continue Shopping</Button>
           </div>
         </CardContent>
       </Card>

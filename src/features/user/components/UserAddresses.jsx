@@ -1,105 +1,74 @@
 // src/features/user/components/UserAddresses.jsx
 import { useEffect, useState } from 'react';
+import { useUserStore } from '../hooks/useUser';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-
-const ROSE_GOLD = '#B76E79';
-const GOLD = '#D4AF37';
-
-// Dummy fetch function (replace with real API)
-const fetchUserAddresses = async () => {
-  await new Promise((res) => setTimeout(res, 300));
-  return [
-    { id: 1, label: 'Home', details: '123 Kashmir Lane, Srinagar, India' },
-    { id: 2, label: 'Office', details: '456 Business St, Delhi, India' },
-  ];
-};
+import AddAddressDialog from './addresses/AddAddressDialog';
 
 export default function UserAddresses() {
-  const [addresses, setAddresses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [newLabel, setNewLabel] = useState('');
-  const [newDetails, setNewDetails] = useState('');
+  const { addresses, fetchAddresses, addAddress, deleteAddress } =
+    useUserStore();
+
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    fetchUserAddresses().then((data) => {
-      setAddresses(data);
-      setLoading(false);
-    });
+    fetchAddresses();
   }, []);
 
-  const handleAddAddress = () => {
-    if (!newLabel || !newDetails) return;
-    const newAddress = { id: Date.now(), label: newLabel, details: newDetails };
-    setAddresses((prev) => [...prev, newAddress]);
-    setNewLabel('');
-    setNewDetails('');
-  };
-
-  const handleDelete = (id) => {
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  if (loading)
-    return <p className="text-center text-gray-500">Loading addresses...</p>;
-
   return (
-    <Card className="max-w-4xl mx-auto mt-8 bg-white/95 shadow-2xl rounded-3xl">
-      <CardHeader>
-        <CardTitle className="text-2xl font-semibold text-gray-900">
-          Saved Addresses
-        </CardTitle>
-      </CardHeader>
+    <>
+      <Card className="max-w-4xl mx-auto bg-white/95 shadow-2xl rounded-3xl">
+        <CardHeader className="flex flex-row justify-between items-center">
+          <CardTitle className="text-2xl font-semibold">
+            Saved Addresses
+          </CardTitle>
+          <Button onClick={() => setOpen(true)}>+ Add New</Button>
+        </CardHeader>
 
-      <CardContent className="flex flex-col gap-4">
-        {addresses.map((address) => (
-          <div
-            key={address.id}
-            className="flex justify-between items-center p-4 border rounded-xl shadow-sm hover:shadow-md transition"
-          >
-            <div>
-              <p className="font-semibold text-gray-900">{address.label}</p>
-              <p className="text-gray-500 text-sm">{address.details}</p>
-            </div>
-            <Button
-              size="sm"
-              variant="destructive"
-              className="rounded-full px-4 py-1 shadow hover:shadow-lg"
-              onClick={() => handleDelete(address.id)}
+        <CardContent className="flex flex-col gap-4">
+          {!addresses.length && (
+            <p className="text-gray-500 text-sm">No saved addresses.</p>
+          )}
+
+          {addresses.map((a) => (
+            <div
+              key={a._id}
+              className="flex justify-between items-start p-4 border rounded-xl"
             >
-              Delete
-            </Button>
-          </div>
-        ))}
+              <div>
+                <p className="font-semibold">
+                  {a.fullName}{' '}
+                  {a.isDefault && (
+                    <span className="ml-2 text-xs text-green-600">
+                      (Default)
+                    </span>
+                  )}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {a.addressLine1}, {a.city}, {a.state} – {a.postalCode}
+                </p>
+                <p className="text-sm text-gray-500">{a.phone}</p>
+              </div>
 
-        {/* Add New Address */}
-        <div className="flex flex-col sm:flex-row gap-2 mt-4 items-center">
-          <Input
-            placeholder="Label (Home, Office...)"
-            value={newLabel}
-            onChange={(e) => setNewLabel(e.target.value)}
-            className="focus:ring-rose-600 focus:border-rose-600 transition-all"
-          />
-          <Input
-            placeholder="Address details"
-            value={newDetails}
-            onChange={(e) => setNewDetails(e.target.value)}
-            className="focus:ring-rose-600 focus:border-rose-600 transition-all"
-          />
-          <Button
-            onClick={handleAddAddress}
-            className="rounded-full px-6 py-2 font-semibold shadow-lg"
-            style={{
-              background: `linear-gradient(90deg, ${ROSE_GOLD}, ${GOLD})`,
-              color: '#fff',
-            }}
-          >
-            Add
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => deleteAddress(a._id)}
+              >
+                Delete
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <AddAddressDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        onSave={async (data) => {
+          await addAddress(data);
+        }}
+      />
+    </>
   );
 }

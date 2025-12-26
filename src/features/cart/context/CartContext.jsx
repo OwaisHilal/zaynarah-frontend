@@ -1,16 +1,13 @@
-// src/features/cart/context/CartContext.jsx
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import CartContext from './CartContextInstance';
 import { useCartStore } from '../hooks/cartStore';
 
 export const CartProvider = ({ children }) => {
-  // --- SELECT ALL CART STORE FIELDS ---
   const cart = useCartStore((s) => s.cart);
-  const cartStore = useCartStore(); // get full store object
+  const cartStore = useCartStore();
 
   const [checkoutSessionId, setCheckoutSessionId] = useState(null);
 
-  // --- CART TOTALS ---
   const cartTotal = useMemo(
     () => cart.reduce((sum, i) => sum + i.price * i.qty, 0),
     [cart]
@@ -23,18 +20,27 @@ export const CartProvider = ({ children }) => {
 
   const hasItems = cart.length > 0;
 
-  // --- CHECKOUT SESSION HELPERS ---
-  const initCheckoutSession = useCallback(async (token) => {
+  useEffect(() => {
+    cartStore.fetchCart();
+  }, []);
+
+  const initCheckoutSession = useCallback(async () => {
+    const token = localStorage.getItem('token');
     if (!token) throw new Error('Login required');
 
-    const res = await fetch('/api/checkout/session/init', {
+    const res = await fetch('/api/orders/checkout/session/init', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
     });
-    const data = await res.json();
 
+    if (!res.ok) throw new Error('Checkout session init failed');
+
+    const data = await res.json();
     if (!data.checkoutSessionId) {
-      throw new Error('Checkout session failed');
+      throw new Error('Invalid checkout session response');
     }
 
     setCheckoutSessionId(data.checkoutSessionId);
@@ -43,20 +49,16 @@ export const CartProvider = ({ children }) => {
 
   const resetCheckoutSession = useCallback(() => {
     setCheckoutSessionId(null);
-    cartStore.clearCart(); // Zustand clearCart
+    cartStore.clearCart();
   }, [cartStore]);
 
-  // --- PROVIDER VALUE ---
   const value = useMemo(
     () => ({
-      // cart store data
       ...cartStore,
       cart,
       cartTotal,
       cartCount,
       hasItems,
-
-      // checkout session fields
       checkoutSessionId,
       setCheckoutSessionId,
       initCheckoutSession,

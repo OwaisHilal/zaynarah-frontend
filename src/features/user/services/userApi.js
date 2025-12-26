@@ -77,14 +77,14 @@ export const deleteAddress = async (id) => {
    USER ORDERS
 ================================ */
 export const getMyOrders = async () => {
-  const res = await axios.get(`${API_BASE}/users/my-orders`, {
+  const res = await axios.get(`${API_BASE}/orders/my-orders`, {
     headers: getAuthHeaders(),
   });
   return res.data;
 };
 
 export const getSingleUserOrder = async (orderId) => {
-  const res = await axios.get(`${API_BASE}/users/my-orders/${orderId}`, {
+  const res = await axios.get(`${API_BASE}/orders/${orderId}`, {
     headers: getAuthHeaders(),
   });
   return res.data;

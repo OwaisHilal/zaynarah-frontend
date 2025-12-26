@@ -1,10 +1,13 @@
 // src/features/user/pages/VerifyEmailPage.jsx
-import { useEffect, useState } from 'react';
+// src/features/user/pages/VerifyEmailPage.jsx
+import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { authClient } from '@/api/authClient';
+import axios from 'axios';
 import { useUserStore } from '../hooks/useUser';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/features/ui/toast';
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 
 export default function VerifyEmailPage() {
   const [params] = useSearchParams();
@@ -12,96 +15,89 @@ export default function VerifyEmailPage() {
   const { showToast } = useToast();
   const { resendEmailVerification, loading } = useUserStore();
 
-  const [verifying, setVerifying] = useState(true);
+  const token = params.get('token');
+
+  const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
+  const [verified, setVerified] = useState(false);
   const [resent, setResent] = useState(false);
 
-  useEffect(() => {
-    const token = params.get('token');
-
+  const handleVerify = async () => {
     if (!token) {
       setError('Invalid verification link');
-      setVerifying(false);
       return;
     }
 
-    let active = true;
+    setVerifying(true);
+    setError(null);
 
-    authClient
-      .get(`/auth/email/verify?token=${token}`)
-      .then(() => {
-        if (!active) return;
-        showToast('Email verified successfully');
-        setTimeout(() => navigate('/login'), 1200);
-      })
-      .catch((err) => {
-        if (!active) return;
-        setError(
-          err.response?.data?.message || 'Verification link expired or invalid'
-        );
-      })
-      .finally(() => {
-        if (active) setVerifying(false);
+    try {
+      await axios.get(`${API_BASE}/auth/email/verify`, {
+        params: { token },
       });
 
-    return () => {
-      active = false;
-    };
-  }, [params, navigate, showToast]);
+      setVerified(true);
+      showToast('Email verified successfully');
+      setTimeout(() => navigate('/login'), 1500);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Verification failed or expired');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleResend = async () => {
     const ok = await resendEmailVerification();
     if (ok) {
       setResent(true);
-      showToast('Verification email sent');
+      showToast('Verification email resent');
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center">
-        {verifying && (
-          <p className="text-gray-600 text-lg">Verifying your email…</p>
-        )}
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          Verify Your Email
+        </h1>
 
-        {!verifying && !error && (
+        {!verified && (
           <>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Email Verified
-            </h1>
-            <p className="text-gray-600">Redirecting you to login…</p>
-          </>
-        )}
+            <p className="text-gray-600 mb-6">
+              Please verify your email to continue using your account.
+            </p>
 
-        {!verifying && error && (
-          <>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Verification Failed
-            </h1>
-            <p className="text-gray-600 mb-6">{error}</p>
+            {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
+
+            <Button
+              onClick={handleVerify}
+              disabled={verifying}
+              className="w-full mb-3"
+            >
+              {verifying ? 'Verifying…' : 'Verify Email'}
+            </Button>
 
             {!resent ? (
               <Button
+                variant="outline"
                 onClick={handleResend}
                 disabled={loading}
-                className="w-full mb-3"
+                className="w-full"
               >
                 {loading ? 'Sending…' : 'Resend Verification Email'}
               </Button>
             ) : (
-              <p className="text-green-600 mb-4">
+              <p className="text-green-600 text-sm mt-3">
                 Verification email sent. Please check your inbox.
               </p>
             )}
-
-            <Button
-              variant="outline"
-              onClick={() => navigate('/login')}
-              className="w-full"
-            >
-              Go to Login
-            </Button>
           </>
+        )}
+
+        {verified && (
+          <p className="text-green-600">
+            Email verified. Redirecting to login…
+          </p>
         )}
       </div>
     </div>

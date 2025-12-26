@@ -148,6 +148,19 @@ export const useUserStore = create((set, get) => ({
     });
   },
 
+  resendEmailVerification: async () => {
+    try {
+      await axios.post(
+        `${API_BASE}/auth/email/resend`,
+        {},
+        { headers: authHeaders() }
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
   /* =====================
      ROLE HELPERS
   ====================== */

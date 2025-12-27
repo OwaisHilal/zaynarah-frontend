@@ -1,5 +1,12 @@
+//src/features/cart/components/MiniCart.jsx
 import { Link } from 'react-router-dom';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
 import { useCartStore } from '../hooks/cartStore';
@@ -22,6 +29,12 @@ export default function MiniCart({ children }) {
         side="right"
         className="w-full sm:max-w-sm p-0 flex flex-col"
       >
+        {/* ✅ Accessibility (REQUIRED by Radix) */}
+        <SheetTitle className="sr-only">Shopping Cart</SheetTitle>
+        <SheetDescription className="sr-only">
+          Review items in your cart before checkout
+        </SheetDescription>
+
         {/* Header */}
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold flex items-center gap-2">

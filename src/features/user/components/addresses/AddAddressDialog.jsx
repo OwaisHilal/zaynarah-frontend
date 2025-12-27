@@ -1,11 +1,11 @@
-//src/features/user/components/addresses/AddAddressDialog.jsx
-
+// src/features/user/components/addresses/AddAddressDialog.jsx
 import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -49,11 +49,18 @@ export default function AddAddressDialog({ open, onClose, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg rounded-2xl">
+      <DialogContent
+        className="sm:max-w-lg rounded-2xl"
+        aria-describedby="add-address-description"
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             Add New Address
           </DialogTitle>
+          <DialogDescription id="add-address-description" className="sr-only">
+            Enter shipping address details including name, phone number, and
+            full postal address.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

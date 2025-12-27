@@ -8,7 +8,8 @@ export default function CheckoutNavigation({
   onBack,
   onPlaceOrder,
 }) {
-  const { loading, isNextDisabled } = useCheckoutStore();
+  const loading = useCheckoutStore((s) => s.loading);
+  const isNextDisabled = useCheckoutStore((s) => s.isNextDisabled);
 
   return (
     <div className="mt-6 flex justify-between gap-4">
@@ -23,7 +24,7 @@ export default function CheckoutNavigation({
       {currentStep < totalSteps ? (
         <Button
           className="bg-rose-600 hover:bg-rose-700 text-white"
-          disabled={loading || isNextDisabled(currentStep)}
+          disabled={loading || isNextDisabled}
           onClick={onNext}
         >
           {loading ? 'Processing…' : 'Next'}

@@ -116,14 +116,14 @@ export default function Footer() {
           {/* Social */}
           <div className="flex items-center gap-5 text-lg text-text-secondary">
             <a
-              href="#"
+              href="https://www.instagram.com/zaynarah.luxe/"
               aria-label="Instagram"
               className="hover:text-brand-gold transition"
             >
               <FaInstagram />
             </a>
             <a
-              href="#"
+              href="https://www.facebook.com/profile.php?id=61581993330042"
               aria-label="Facebook"
               className="hover:text-brand-gold transition"
             >

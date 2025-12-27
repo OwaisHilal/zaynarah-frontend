@@ -23,7 +23,6 @@ const initialState = {
   loading: false,
   checkoutSessionId: null,
 
-  // shipping methods cache for last selected address
   shippingMethods: [],
   shippingLoading: false,
   shippingError: '',
@@ -33,9 +32,13 @@ export const useCheckoutStore = create((set, get) => ({
   ...initialState,
 
   // -------------------------
-  // Setters
+  // Setters (SAFE)
   // -------------------------
-  setUser: (u) => set({ user: u }),
+  setUser: (u) => {
+    const current = get().user;
+    if (!u || current?.id === u?.id) return;
+    set({ user: u });
+  },
 
   setCurrentStep: (s) => set({ currentStep: s }),
 
@@ -43,7 +46,6 @@ export const useCheckoutStore = create((set, get) => ({
     set(
       produce((draft) => {
         draft.shippingAddress = addr;
-        // when address changes, reset shippingMethod and shippingMethods
         draft.shippingMethod = null;
         draft.shippingMethods = [];
         draft.shippingError = '';
@@ -56,7 +58,6 @@ export const useCheckoutStore = create((set, get) => ({
     set(
       produce((draft) => {
         draft.paymentMethod = pm;
-        // clear payment details when switching
         draft.paymentDetails = null;
       })
     ),
@@ -74,6 +75,10 @@ export const useCheckoutStore = create((set, get) => ({
   // -------------------------
   // Navigation helpers
   // -------------------------
+  isNextDisabled: (step = get().currentStep) => {
+    return Boolean(get().validateStep(step));
+  },
+
   validateStep: (step = get().currentStep) => {
     const s = get();
     switch (step) {
@@ -87,7 +92,6 @@ export const useCheckoutStore = create((set, get) => ({
         if (!s.paymentMethod) return 'Please select a payment method.';
         return null;
       case 4:
-        if (!s.paymentMethod) return 'Please select a payment method.';
         if (s.paymentMethod === 'razorpay') {
           if (!s.paymentDetails?.name)
             return 'Full name required for Razorpay.';
@@ -99,24 +103,15 @@ export const useCheckoutStore = create((set, get) => ({
         if (!s.shippingAddress) return 'Missing shipping address.';
         if (!s.shippingMethod) return 'Missing shipping method.';
         if (!s.paymentMethod) return 'Missing payment method.';
-        if (s.paymentMethod === 'razorpay') {
-          if (!s.paymentDetails?.name) return 'Payment details incomplete.';
-          if (!s.paymentDetails?.phone) return 'Payment details incomplete.';
-        }
         return null;
       default:
         return null;
     }
   },
 
-  isNextDisabled: (step = get().currentStep) => !!get().validateStep(step),
-
   nextStep: () => {
     const err = get().validateStep(get().currentStep);
-    if (err) {
-      // do not call alert here — components should show message
-      return { error: err };
-    }
+    if (err) return { error: err };
     set((s) => ({ currentStep: Math.min(s.currentStep + 1, s.totalSteps) }));
     return { error: null };
   },
@@ -125,13 +120,10 @@ export const useCheckoutStore = create((set, get) => ({
     set((s) => ({ currentStep: Math.max(s.currentStep - 1, 1) }));
   },
 
-  resetCheckout: () =>
-    set({
-      ...initialState,
-    }),
+  resetCheckout: () => set({ ...initialState }),
 
   // -------------------------
-  // Shipping methods loader
+  // Shipping
   // -------------------------
   loadShippingMethods: async () => {
     const addr = get().shippingAddress;
@@ -156,7 +148,7 @@ export const useCheckoutStore = create((set, get) => ({
   },
 
   // -------------------------
-  // Place order + payment flow
+  // Place order + payment
   // -------------------------
   buildCheckoutPayload: ({ cart, cartTotal }) => {
     if (!Array.isArray(cart) || cart.length === 0) {
@@ -164,28 +156,18 @@ export const useCheckoutStore = create((set, get) => ({
     }
 
     const s = get();
-    const items = cart.map((c) => {
-      const productId =
-        c.productId || (c.product && c.product._id) || c.id || c._id;
-      return {
-        productId,
-        title: c.title || c.name || '',
-        price: Number(c.price || 0),
-        qty: Number(c.qty || c.quantity || 1),
-        image: c.image || '',
-        sku: c.sku || '',
-      };
-    });
+    const items = cart.map((c) => ({
+      productId: c.productId || (c.product && c.product._id) || c.id || c._id,
+      title: c.title || c.name || '',
+      price: Number(c.price || 0),
+      qty: Number(c.qty || c.quantity || 1),
+      image: c.image || '',
+      sku: c.sku || '',
+    }));
 
     return {
       items,
-      cartTotal: {
-        items: Number((cartTotal && cartTotal.items) || 0),
-        shipping: Number((cartTotal && cartTotal.shipping) || 0),
-        tax: Number((cartTotal && cartTotal.tax) || 0),
-        grand: Number((cartTotal && cartTotal.grand) || 0),
-        currency: (cartTotal && cartTotal.currency) || 'INR',
-      },
+      cartTotal,
       user: s.user,
       shippingAddress: s.shippingAddress,
       billingAddress: s.billingAddress || s.shippingAddress,
@@ -199,35 +181,20 @@ export const useCheckoutStore = create((set, get) => ({
   placeOrderAndPay: async ({ cart, cartTotal }) => {
     set({ loading: true });
     try {
-      const validationError = get().validateStep(4);
-      if (validationError) throw new Error(validationError);
-
       const payload = get().buildCheckoutPayload({ cart, cartTotal });
-
       const order = await placeOrderAPI(payload);
       set({ orderData: order });
 
-      const pm = get().paymentMethod;
-      if (pm && order && order._id) {
-        if (pm === 'stripe') {
+      if (order?._id) {
+        if (get().paymentMethod === 'stripe') {
           const session = await createStripeSessionAPI(order._id);
-          const sid =
-            session?.sessionId || session?.id || session?.checkoutSessionId;
-          const pk =
-            session?.publishableKey ||
-            session?.publishable_key ||
-            session?.publishable;
-          if (!sid || !pk) throw new Error('Stripe session creation failed.');
-          await startPayment('stripe', { publishableKey: pk, sessionId: sid });
-        } else if (pm === 'razorpay') {
+          await startPayment('stripe', {
+            publishableKey: session.publishableKey,
+            sessionId: session.sessionId,
+          });
+        } else {
           const rp = await createRazorpayOrderAPI(order._id);
-          const orderId = rp?.orderId || rp?.id || rp?.order_id;
-          const key = rp?.key || rp?.key_id || rp?.keyId;
-          const amount = rp?.amount;
-          const currency = rp?.currency;
-          if (!orderId || !key || !amount)
-            throw new Error('Razorpay order creation failed.');
-          await startPayment('razorpay', { key, amount, currency, orderId });
+          await startPayment('razorpay', rp);
         }
       }
 
@@ -238,6 +205,5 @@ export const useCheckoutStore = create((set, get) => ({
   },
 }));
 
-// convenience compatibility hook -> existing components can import useCheckout()
 export const useCheckout = () => useCheckoutStore();
 export default useCheckoutStore;

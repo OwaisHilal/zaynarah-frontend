@@ -74,7 +74,10 @@ export const useUserStore = create((set, get) => ({
       localStorage.setItem('user', JSON.stringify(res.data));
       set({ user: res.data, loading: false });
     } catch (err) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       set({
+        user: null,
         error: err.response?.data?.message || 'Failed to load profile',
         loading: false,
       });

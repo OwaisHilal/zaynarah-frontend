@@ -1,5 +1,11 @@
-// src/App.jsx
-import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
+// frontend/src/App.jsx
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+  Navigate,
+  useLocation,
+} from 'react-router-dom';
 import { CartProvider } from './features/cart/context/CartContext';
 import SearchProvider from '@/features/search/context/SearchProvider';
 
@@ -22,10 +28,6 @@ import TheCraftPage from './pages/TheCraft';
 import SearchModal from '@/features/search/components/SearchModal';
 import { ToastProvider } from '@/features/ui/toast';
 
-/* =========================
-   ROUTE GUARDS
-========================= */
-
 function ProtectedRoute({ children }) {
   const { user } = useUserStore();
   if (!user) return <Navigate to="/login" replace />;
@@ -34,16 +36,23 @@ function ProtectedRoute({ children }) {
 
 function VerifiedRoute({ children }) {
   const { user } = useUserStore();
+  const location = useLocation();
 
-  if (!user) return <Navigate to="/login" replace />;
-  if (!user.emailVerified) return <Navigate to="/verify-email" replace />;
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!user.emailVerified) {
+    return (
+      <Navigate
+        to={`/verify-email?from=${encodeURIComponent(location.pathname)}`}
+        replace
+      />
+    );
+  }
 
   return children;
 }
-
-/* =========================
-   APP
-========================= */
 
 export default function App() {
   return (
@@ -55,9 +64,6 @@ export default function App() {
 
             <Routes>
               <Route element={<Layout />}>
-                {/* -------------------------
-                   PUBLIC ROUTES
-                ------------------------- */}
                 <Route path="/" element={<Home />} />
                 <Route path="/shop" element={<ShopPage />} />
                 <Route path="/product/:id" element={<ProductPage />} />
@@ -65,13 +71,8 @@ export default function App() {
                 <Route path="/the-craft" element={<TheCraftPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignupPage />} />
-
-                {/* Email Verification (PUBLIC) */}
                 <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-                {/* -------------------------
-                   AUTHENTICATED ROUTES
-                ------------------------- */}
                 <Route
                   path="/profile"
                   element={
@@ -81,9 +82,6 @@ export default function App() {
                   }
                 />
 
-                {/* -------------------------
-                   VERIFIED USER ROUTES
-                ------------------------- */}
                 <Route
                   path="/checkout"
                   element={

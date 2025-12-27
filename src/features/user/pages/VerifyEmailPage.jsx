@@ -12,9 +12,10 @@ export default function VerifyEmailPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { resendEmailVerification, loading } = useUserStore();
+  const { resendEmailVerification, loading, fetchProfile } = useUserStore();
 
   const token = params.get('token');
+  const from = params.get('from') || '/checkout';
 
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
@@ -32,9 +33,14 @@ export default function VerifyEmailPage() {
 
     try {
       await axios.get(`${API_BASE}/auth/email/verify?token=${token}`);
+      await fetchProfile();
+
       setVerified(true);
       showToast('Email verified successfully');
-      setTimeout(() => navigate('/login'), 1500);
+
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 800);
     } catch (err) {
       setError(err.response?.data?.message || 'Verification failed');
     } finally {

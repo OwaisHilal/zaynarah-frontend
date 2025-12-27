@@ -26,6 +26,7 @@ export default function CheckoutPage() {
     'Review Order',
   ];
 
+  // 🔐 Auth + verification gate
   useEffect(() => {
     if (!user) {
       navigate('/login?from=/checkout', { replace: true });
@@ -33,12 +34,20 @@ export default function CheckoutPage() {
     }
 
     if (!user.emailVerified) {
-      navigate('/verify-email', { replace: true });
+      navigate('/verify-email?from=/checkout', { replace: true });
       return;
     }
+  }, [user, navigate]);
 
-    checkout.setUser(user);
-  }, [user, checkout, navigate]);
+  // 🧠 Sync user into checkout store ONCE
+  useEffect(() => {
+    if (!user) return;
+
+    const current = checkout.user;
+    if (current?.id !== user.id) {
+      checkout.setUser(user);
+    }
+  }, [user, checkout]);
 
   const handleNext = () => {
     const msg = checkout.validateStep(checkout.currentStep);
@@ -58,6 +67,7 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     if (!user?.emailVerified) {
       setError('Please verify your email before placing an order.');
+      navigate('/verify-email?from=/checkout');
       return;
     }
 
@@ -66,10 +76,6 @@ export default function CheckoutPage() {
       const order = await checkout.placeOrderAndPay({ cart, cartTotal });
       navigate('/checkout/success', { state: { order } });
     } catch (err) {
-      if (err?.message?.includes('verify')) {
-        navigate('/verify-email');
-        return;
-      }
       setError(err.message || 'Order failed.');
     }
   };

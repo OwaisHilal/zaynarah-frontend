@@ -1,3 +1,5 @@
+//src/features/checkout/components/CheckoutNavigation.jsx
+
 import { Button } from '@/components/ui/button';
 import { useCheckoutStore } from '../store/checkoutStore';
 

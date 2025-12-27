@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useCart } from '../../cart/context/useCart';
 import { useUserStore } from '../../user/hooks/useUser';
 import { useCheckoutStore } from '../store/checkoutStore';
 
@@ -13,7 +12,6 @@ import StepContent from '../components/StepContent';
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const checkout = useCheckoutStore();
-  const { cart = [], cartTotal = {} } = useCart() || {};
   const user = useUserStore((s) => s.user);
 
   const [error, setError] = useState('');
@@ -26,7 +24,6 @@ export default function CheckoutPage() {
     'Review Order',
   ];
 
-  // 🔐 Auth + verification gate
   useEffect(() => {
     if (!user) {
       navigate('/login?from=/checkout', { replace: true });
@@ -39,24 +36,24 @@ export default function CheckoutPage() {
     }
   }, [user, navigate]);
 
-  // 🧠 Sync user into checkout store ONCE
   useEffect(() => {
     if (!user) return;
 
-    const current = checkout.user;
-    if (current?.id !== user.id) {
+    if (checkout.user?._id !== user._id) {
       checkout.setUser(user);
     }
   }, [user, checkout]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const msg = checkout.validateStep(checkout.currentStep);
     if (msg) {
       setError(msg);
       return;
     }
+
     setError('');
-    checkout.nextStep();
+    const res = await checkout.nextStep();
+    if (res?.error) setError(res.error);
   };
 
   const handleBack = () => {
@@ -73,8 +70,8 @@ export default function CheckoutPage() {
 
     try {
       setError('');
-      const order = await checkout.placeOrderAndPay({ cart, cartTotal });
-      navigate('/checkout/success', { state: { order } });
+      await checkout.startPaymentFlow();
+      navigate('/checkout/success');
     } catch (err) {
       setError(err.message || 'Order failed.');
     }

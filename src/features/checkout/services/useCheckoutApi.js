@@ -1,4 +1,4 @@
-//src/features/checkout/services/useCheckoutApi.js
+// src/features/checkout/services/useCheckoutApi.js
 
 import axios from 'axios';
 
@@ -20,6 +20,36 @@ const normalizeError = (err) =>
   err?.message ||
   'Network error';
 
+/* =========================
+   CHECKOUT SESSION (NEW)
+========================= */
+
+export async function initCheckoutSessionAPI() {
+  try {
+    // 🔴 FIX: send empty object so Zod passes
+    const res = await api.post('/orders/checkout/session/init', {});
+    return res.data;
+  } catch (err) {
+    throw new Error(normalizeError(err));
+  }
+}
+
+export async function finalizePricingAPI(payload) {
+  try {
+    const res = await api.post(
+      '/orders/checkout/session/finalize-pricing',
+      payload
+    );
+    return res.data;
+  } catch (err) {
+    throw new Error(normalizeError(err));
+  }
+}
+
+/* =========================
+   LEGACY (KEEP FOR NOW)
+========================= */
+
 export async function placeOrderAPI(payload) {
   try {
     const res = await api.post('/orders/create', payload);
@@ -29,11 +59,15 @@ export async function placeOrderAPI(payload) {
   }
 }
 
+/* =========================
+   PAYMENTS
+========================= */
+
 export async function createStripeSessionAPI(orderId) {
   try {
     const res = await api.post('/payments/stripe-session', { orderId });
     return {
-      sessionId: res.data?.id || res.data?.sessionId,
+      sessionId: res.data?.sessionId || res.data?.id,
       publishableKey: res.data?.publishableKey,
     };
   } catch (err) {
@@ -50,6 +84,10 @@ export async function createRazorpayOrderAPI(orderId) {
   }
 }
 
+/* =========================
+   SHIPPING
+========================= */
+
 export async function getShippingMethods(address) {
   try {
     const res = await api.post('/shipping/methods', { address });
@@ -58,6 +96,10 @@ export async function getShippingMethods(address) {
     throw new Error(normalizeError(err));
   }
 }
+
+/* =========================
+   ORDERS
+========================= */
 
 export async function getOrderAPI(orderId) {
   try {

@@ -5,27 +5,59 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '../utils/checkoutHelpers';
 import { useCart } from '@/features/cart/context/useCart';
+import { getOrderAPI } from '../services/useCheckoutApi';
 
 export default function OrderSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
   const { clearCartOnLogout } = useCart();
+
   const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (location.state?.order) {
-      localStorage.setItem('lastOrder', JSON.stringify(location.state.order));
-      setOrder(location.state.order);
-      clearCartOnLogout();
-      return;
-    }
+    const loadOrder = async () => {
+      try {
+        const orderId =
+          location.state?.orderId ||
+          JSON.parse(localStorage.getItem('lastOrderId') || 'null');
 
-    const saved = localStorage.getItem('lastOrder');
-    if (saved) {
-      setOrder(JSON.parse(saved));
-      clearCartOnLogout();
-    }
+        if (!orderId) {
+          setLoading(false);
+          return;
+        }
+
+        const freshOrder = await getOrderAPI(orderId);
+
+        if (!freshOrder || freshOrder.status !== 'paid') {
+          setLoading(false);
+          return;
+        }
+
+        localStorage.setItem('lastOrderId', JSON.stringify(orderId));
+        setOrder(freshOrder);
+        clearCartOnLogout();
+      } catch {
+        setLoading(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadOrder();
   }, [location.state, clearCartOnLogout]);
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto p-6">
+        <Card>
+          <CardContent className="text-center py-10">
+            Verifying your order…
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!order) {
     return (

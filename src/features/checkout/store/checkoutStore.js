@@ -3,221 +3,247 @@ import { create } from 'zustand';
 import { produce } from 'immer';
 
 import {
-  placeOrderAPI,
+  initCheckoutSessionAPI,
+  finalizePricingAPI,
   createStripeSessionAPI,
   createRazorpayOrderAPI,
   getShippingMethods,
 } from '../services/useCheckoutApi';
+
 import { startPayment } from '../hooks/usePaymentHandler';
+
+const STORAGE_KEY = 'checkout_session_v1';
 
 const initialState = {
   currentStep: 1,
   totalSteps: 5,
-  shippingAddress: null,
-  shippingMethod: null,
-  paymentMethod: 'stripe',
-  billingAddress: null,
-  paymentDetails: null,
-  orderData: null,
+
   user: null,
-  loading: false,
+
   checkoutSessionId: null,
+  orderId: null,
+
+  shippingAddress: null,
+  billingAddress: null,
+  shippingMethod: null,
+
+  paymentMethod: 'stripe',
+  paymentDetails: null,
+
   shippingMethods: [],
   shippingLoading: false,
   shippingError: '',
-  isNextDisabled: true,
+
+  loading: false,
 };
 
-export const useCheckoutStore = create((set, get) => {
-  const recomputeNextDisabled = () => {
-    const err = get().validateStep(get().currentStep);
-    set({ isNextDisabled: Boolean(err) });
-  };
+const persistState = (state) => {
+  const {
+    currentStep,
+    checkoutSessionId,
+    orderId,
+    shippingAddress,
+    billingAddress,
+    shippingMethod,
+    paymentMethod,
+    paymentDetails,
+  } = state;
 
-  return {
-    ...initialState,
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      currentStep,
+      checkoutSessionId,
+      orderId,
+      shippingAddress,
+      billingAddress,
+      shippingMethod,
+      paymentMethod,
+      paymentDetails,
+    })
+  );
+};
 
-    setUser: (u) => {
-      const current = get().user;
-      if (!u || current?.id === u?.id) return;
-      set({ user: u });
-      recomputeNextDisabled();
-    },
+const hydrateState = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) || {};
+  } catch {
+    return {};
+  }
+};
 
-    setCurrentStep: (s) => {
-      set({ currentStep: s });
-      recomputeNextDisabled();
-    },
+export const useCheckoutStore = create((set, get) => ({
+  ...initialState,
+  ...hydrateState(),
 
-    setShippingAddress: (addr) =>
-      set(
-        produce((draft) => {
-          draft.shippingAddress = addr;
-          draft.shippingMethod = null;
-          draft.shippingMethods = [];
-          draft.shippingError = '';
-        }),
-        false,
-        recomputeNextDisabled()
-      ),
+  setUser: (u) => {
+    if (!u || get().user?._id === u._id) return;
+    set({ user: u });
+  },
 
-    setShippingMethod: (m) => {
-      set({ shippingMethod: m });
-      recomputeNextDisabled();
-    },
+  setCurrentStep: (s) => {
+    set({ currentStep: s });
+    persistState(get());
+  },
 
-    setPaymentMethod: (pm) =>
-      set(
-        produce((draft) => {
-          draft.paymentMethod = pm;
-          draft.paymentDetails = null;
-        }),
-        false,
-        recomputeNextDisabled()
-      ),
+  setShippingAddress: (addr) =>
+    set(
+      produce((draft) => {
+        draft.shippingAddress = addr;
+        draft.billingAddress = draft.billingAddress || addr;
+        draft.shippingMethod = null;
+        draft.shippingMethods = [];
+        draft.shippingError = '';
+      }),
+      false,
+      () => persistState(get())
+    ),
 
-    setBillingAddress: (b) => {
-      set({ billingAddress: b });
-      recomputeNextDisabled();
-    },
+  setBillingAddress: (addr) => {
+    set({ billingAddress: addr });
+    persistState(get());
+  },
 
-    setPaymentDetails: (d) => {
-      set({ paymentDetails: d });
-      recomputeNextDisabled();
-    },
+  setShippingMethod: (method) => {
+    set({ shippingMethod: method });
+    persistState(get());
+  },
 
-    setOrderData: (o) => set({ orderData: o }),
+  setPaymentMethod: (method) =>
+    set(
+      produce((draft) => {
+        draft.paymentMethod = method;
+        draft.paymentDetails = null;
+      }),
+      false,
+      () => persistState(get())
+    ),
 
-    setCheckoutSessionId: (id) => set({ checkoutSessionId: id }),
+  setPaymentDetails: (details) => {
+    set({ paymentDetails: details });
+    persistState(get());
+  },
 
-    setLoading: (v) => set({ loading: v }),
+  validateStep: (step = get().currentStep) => {
+    const s = get();
 
-    validateStep: (step = get().currentStep) => {
-      const s = get();
-      switch (step) {
-        case 1:
-          if (!s.shippingAddress) return 'Please select a shipping address.';
-          return null;
-        case 2:
-          if (!s.shippingMethod) return 'Please select a shipping method.';
-          return null;
-        case 3:
-          if (!s.paymentMethod) return 'Please select a payment method.';
-          return null;
-        case 4:
-          if (s.paymentMethod === 'razorpay') {
-            if (!s.paymentDetails?.name)
-              return 'Full name required for Razorpay.';
-            if (!s.paymentDetails?.phone)
-              return 'Phone number required for Razorpay.';
-          }
-          return null;
-        case 5:
-          if (!s.shippingAddress) return 'Missing shipping address.';
-          if (!s.shippingMethod) return 'Missing shipping method.';
-          if (!s.paymentMethod) return 'Missing payment method.';
-          return null;
-        default:
-          return null;
-      }
-    },
+    switch (step) {
+      case 1:
+        if (!s.shippingAddress) return 'Please select a shipping address.';
+        return null;
+      case 2:
+        if (!s.shippingMethod) return 'Please select a shipping method.';
+        return null;
+      case 3:
+        if (!s.paymentMethod) return 'Please select a payment method.';
+        return null;
+      case 4:
+        if (s.paymentMethod === 'razorpay') {
+          if (!s.paymentDetails?.name)
+            return 'Full name required for Razorpay.';
+          if (!s.paymentDetails?.phone)
+            return 'Phone number required for Razorpay.';
+        }
+        return null;
+      default:
+        return null;
+    }
+  },
 
-    nextStep: () => {
-      const err = get().validateStep(get().currentStep);
-      if (err) return { error: err };
-      set((s) => ({
-        currentStep: Math.min(s.currentStep + 1, s.totalSteps),
-      }));
-      recomputeNextDisabled();
-      return { error: null };
-    },
+  nextStep: async () => {
+    const step = get().currentStep;
+    const err = get().validateStep(step);
+    if (err) return { error: err };
 
-    prevStep: () => {
-      set((s) => ({ currentStep: Math.max(s.currentStep - 1, 1) }));
-      recomputeNextDisabled();
-    },
-
-    resetCheckout: () => {
-      set({ ...initialState });
-    },
-
-    loadShippingMethods: async () => {
-      const addr = get().shippingAddress;
-      if (!addr) {
-        set({ shippingMethods: [], shippingError: '' });
-        return [];
-      }
-
-      set({ shippingLoading: true, shippingError: '' });
-      try {
-        const methods = await getShippingMethods(addr);
-        set({ shippingMethods: methods || [], shippingLoading: false });
-        return methods || [];
-      } catch (err) {
-        set({
-          shippingMethods: [],
-          shippingLoading: false,
-          shippingError: err.message || 'Could not load shipping options.',
-        });
-        return [];
-      }
-    },
-
-    buildCheckoutPayload: ({ cart, cartTotal }) => {
-      if (!Array.isArray(cart) || cart.length === 0) {
-        throw new Error('Your cart is empty.');
-      }
-
-      const s = get();
-      const items = cart.map((c) => ({
-        productId: c.productId || c.product?._id || c.id || c._id,
-        title: c.title || c.name || '',
-        price: Number(c.price || 0),
-        qty: Number(c.qty || c.quantity || 1),
-        image: c.image || '',
-        sku: c.sku || '',
-      }));
-
-      return {
-        items,
-        cartTotal,
-        user: s.user,
-        shippingAddress: s.shippingAddress,
-        billingAddress: s.billingAddress || s.shippingAddress,
-        shippingMethod: s.shippingMethod,
-        paymentMethod: s.paymentMethod,
-        paymentDetails: s.paymentDetails,
-        metadata: { createdFrom: 'frontend' },
-      };
-    },
-
-    placeOrderAndPay: async ({ cart, cartTotal }) => {
+    if (step === 1 && !get().checkoutSessionId) {
       set({ loading: true });
       try {
-        const payload = get().buildCheckoutPayload({ cart, cartTotal });
-        const order = await placeOrderAPI(payload);
-        set({ orderData: order });
-
-        if (order?._id) {
-          if (get().paymentMethod === 'stripe') {
-            const session = await createStripeSessionAPI(order._id);
-            await startPayment('stripe', {
-              publishableKey: session.publishableKey,
-              sessionId: session.sessionId,
-            });
-          } else {
-            const rp = await createRazorpayOrderAPI(order._id);
-            await startPayment('razorpay', rp);
-          }
-        }
-
-        return order;
+        const res = await initCheckoutSessionAPI();
+        set({
+          checkoutSessionId: res.checkoutSessionId,
+          orderId: res.orderId,
+        });
+        persistState(get());
       } finally {
         set({ loading: false });
       }
-    },
-  };
-});
+    }
 
-export const useCheckout = () => useCheckoutStore();
+    if (step === 2) {
+      set({ loading: true });
+      try {
+        await finalizePricingAPI({
+          checkoutSessionId: get().checkoutSessionId,
+          shippingAddress: get().shippingAddress,
+          billingAddress: get().billingAddress || get().shippingAddress,
+          shippingMethod: get().shippingMethod,
+        });
+        persistState(get());
+      } finally {
+        set({ loading: false });
+      }
+    }
+
+    set((s) => ({
+      currentStep: Math.min(s.currentStep + 1, s.totalSteps),
+    }));
+
+    persistState(get());
+    return { error: null };
+  },
+
+  prevStep: () => {
+    set((s) => ({ currentStep: Math.max(s.currentStep - 1, 1) }));
+    persistState(get());
+  },
+
+  resetCheckout: () => {
+    localStorage.removeItem(STORAGE_KEY);
+    set({ ...initialState });
+  },
+
+  loadShippingMethods: async () => {
+    const addr = get().shippingAddress;
+    if (!addr) return [];
+
+    set({ shippingLoading: true, shippingError: '' });
+
+    try {
+      const methods = await getShippingMethods(addr);
+      set({ shippingMethods: methods || [] });
+      return methods || [];
+    } catch (err) {
+      set({
+        shippingMethods: [],
+        shippingError: err.message || 'Failed to load shipping methods',
+      });
+      return [];
+    } finally {
+      set({ shippingLoading: false });
+    }
+  },
+
+  startPaymentFlow: async () => {
+    const { orderId, paymentMethod } = get();
+    if (!orderId) throw new Error('Order not ready');
+
+    set({ loading: true });
+
+    try {
+      if (paymentMethod === 'stripe') {
+        const session = await createStripeSessionAPI(orderId);
+        await startPayment('stripe', session);
+      } else {
+        const rp = await createRazorpayOrderAPI(orderId);
+        await startPayment('razorpay', rp);
+      }
+    } finally {
+      set({ loading: false });
+    }
+  },
+}));
+
 export default useCheckoutStore;
+export const useCheckout = () => useCheckoutStore();

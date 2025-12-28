@@ -1,5 +1,5 @@
 import { Card } from '@/components/ui/card';
-import { Pill } from './Pill';
+import { Pill } from '../Pill';
 
 export function OrderPaymentCard({ order }) {
   const refundEligible =

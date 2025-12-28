@@ -1,6 +1,14 @@
+//src/features/admin/components/product/ProductFilters.jsx
+
 import { Button } from '@/components/ui/button';
 
-export function ProductFilters({ category, onCategoryChange, onAddClick }) {
+export function ProductFilters({
+  category,
+  search,
+  onCategoryChange,
+  onSearchChange,
+  onAddClick,
+}) {
   return (
     <div className="flex items-center justify-between gap-4 flex-wrap">
       <div>
@@ -11,10 +19,20 @@ export function ProductFilters({ category, onCategoryChange, onAddClick }) {
       </div>
 
       <div className="flex items-center gap-3">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder="Search products…"
+          className="w-64 border border-neutral-200 rounded-md px-3 py-2 text-sm bg-white
+                     focus:outline-none focus:ring-2 focus:ring-slate-400"
+        />
+
         <select
           value={category}
           onChange={(e) => onCategoryChange(e.target.value)}
-          className="border border-neutral-200 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-slate-400"
+          className="border border-neutral-200 rounded-md px-3 py-2 text-sm bg-white
+                     focus:outline-none focus:ring-2 focus:ring-slate-400"
         >
           <option value="">All categories</option>
           <option value="shirts">Shirts</option>

@@ -4,9 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { OrderTimeline } from '../components/OrderTimeline';
-import { OrderStatusCard } from '../components/OrderStatusCard';
-import { OrderPaymentCard } from '../components/OrderPaymentCard';
+import { OrderTimeline } from '../components/order/OrderTimeline';
+import { OrderStatusCard } from '../components/order/OrderStatusCard';
+import { OrderPaymentCard } from '../components/order/OrderPaymentCard';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 

@@ -1,6 +1,13 @@
 import { Button } from '@/components/ui/button';
 
-export function ProductTableRow({ product, onEdit, onDelete, isDeleting }) {
+export function ProductTableRow({
+  product,
+  isSelected,
+  onToggleSelect,
+  onEdit,
+  onDelete,
+  isDeleting,
+}) {
   const id = product.id || product._id;
   const inStock = (product.stock ?? 0) > 0;
 
@@ -11,6 +18,16 @@ export function ProductTableRow({ product, onEdit, onDelete, isDeleting }) {
 
   return (
     <tr className="hover:bg-neutral-50 transition-colors">
+      {/* Checkbox */}
+      <td className="px-4 py-3">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onToggleSelect}
+          className="h-4 w-4 rounded border-neutral-300"
+        />
+      </td>
+
       {/* Product (Image + Title) */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">

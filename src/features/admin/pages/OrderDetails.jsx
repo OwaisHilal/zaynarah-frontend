@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { OrderTimeline } from '../components/order/OrderTimeline';
 import { OrderStatusCard } from '../components/order/OrderStatusCard';
 import { OrderPaymentCard } from '../components/order/OrderPaymentCard';
+import { OrderRefundCard } from '../components/order/OrderRefundCard';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 
@@ -90,6 +91,8 @@ export default function OrderDetails() {
         <Button onClick={() => navigate(-1)}>Order not found. Go back</Button>
       </div>
     );
+
+  <OrderRefundCard order={order} onRefunded={fetchOrder} />;
 
   const fulfillment = order.fulfillment || {};
 

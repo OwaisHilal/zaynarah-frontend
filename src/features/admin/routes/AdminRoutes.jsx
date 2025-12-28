@@ -6,14 +6,8 @@ import Dashboard from '../pages/Dashboard';
 import Orders from '../pages/Orders';
 import OrderDetails from '../pages/OrderDetails';
 import Products from '../pages/Products';
-
-function AdminUsers() {
-  return <div />;
-}
-
-function AdminPayments() {
-  return <div />;
-}
+import Users from '../pages/Users';
+import Payments from '../pages/Payments';
 
 export default function AdminRoutes() {
   const { allowed, loading } = useAdminGuard();
@@ -30,8 +24,8 @@ export default function AdminRoutes() {
 
         <Route path="products" element={<Products />} />
 
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="payments" element={<AdminPayments />} />
+        <Route path="users" element={<Users />} />
+        <Route path="payments" element={<Payments />} />
 
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>

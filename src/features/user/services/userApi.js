@@ -8,41 +8,30 @@ const getAuthHeaders = () => {
   return { Authorization: `Bearer ${token}` };
 };
 
-/* ================================
-   AUTH (Login + Signup)
-================================ */
 export const loginUser = async (data) => {
   const res = await axios.post(`${API_BASE}/auth/login`, data);
   return res.data;
-  // expected → { token, user }
 };
 
 export const signupUser = async (data) => {
   const res = await axios.post(`${API_BASE}/auth/register`, data);
   return res.data;
-  // expected → { token, user }
 };
 
-/* ================================
-   USER PROFILE
-================================ */
 export const getProfile = async () => {
-  const res = await axios.get(`${API_BASE}/users/profile`, {
+  const res = await axios.get(`${API_BASE}/users/me`, {
     headers: getAuthHeaders(),
   });
   return res.data;
 };
 
 export const updateProfile = async (data) => {
-  const res = await axios.put(`${API_BASE}/users/profile`, data, {
+  const res = await axios.put(`${API_BASE}/users/me`, data, {
     headers: getAuthHeaders(),
   });
   return res.data;
 };
 
-/* ================================
-   ADDRESSES
-================================ */
 export const getAddresses = async () => {
   const res = await axios.get(`${API_BASE}/users/addresses`, {
     headers: getAuthHeaders(),
@@ -73,9 +62,6 @@ export const deleteAddress = async (id) => {
   return res.data;
 };
 
-/* ================================
-   USER ORDERS
-================================ */
 export const getMyOrders = async () => {
   const res = await axios.get(`${API_BASE}/orders/my-orders`, {
     headers: getAuthHeaders(),

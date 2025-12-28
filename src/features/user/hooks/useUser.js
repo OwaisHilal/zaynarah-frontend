@@ -15,9 +15,6 @@ export const useUserStore = create((set, get) => ({
   error: null,
   addresses: [],
 
-  /* =====================
-     AUTH
-  ====================== */
   login: async (credentials) => {
     set({ loading: true, error: null });
     try {
@@ -61,9 +58,6 @@ export const useUserStore = create((set, get) => ({
     useCartStore.getState().clearCartOnLogout();
   },
 
-  /* =====================
-     PROFILE
-  ====================== */
   fetchProfile: async () => {
     set({ loading: true, error: null });
     try {
@@ -112,9 +106,6 @@ export const useUserStore = create((set, get) => ({
     );
   },
 
-  /* =====================
-     ADDRESSES
-  ====================== */
   fetchAddresses: async () => {
     try {
       const res = await axios.get(`${API_BASE}/users/addresses`, {
@@ -164,9 +155,6 @@ export const useUserStore = create((set, get) => ({
     }
   },
 
-  /* =====================
-     ROLE HELPERS
-  ====================== */
   isAdmin: () => get().user?.role === 'admin',
   isCustomer: () => get().user?.role === 'customer',
 }));

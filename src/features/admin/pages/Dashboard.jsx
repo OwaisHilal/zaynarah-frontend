@@ -1,166 +1,164 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 import OrdersTrendChart from '../components/dashboard/OrdersTrendChart';
 import PaymentsBreakdownCharts from '../components/dashboard/PaymentsBreakdownCharts';
+import { LowStockProductsCard } from '../components/dashboard/LowStockProductsCard';
+import { StatCard } from '../components/dashboard/StatCard';
 import { exportToCSV } from '../utils/exportCsv';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 
-function Metric({ label, value }) {
-  return (
-    <Card className="border border-neutral-200 bg-white p-5">
-      <div className="text-xs font-medium text-neutral-500">{label}</div>
-      <div className="mt-2 text-2xl font-semibold text-neutral-900">
-        {value}
-      </div>
-    </Card>
-  );
-}
-
-function LowStockCard({ products }) {
-  return (
-    <Card className="border border-neutral-200 bg-white p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-sm font-medium text-neutral-800">
-          Low stock alerts
-        </div>
-        <Badge variant="destructive">{products.length}</Badge>
-      </div>
-
-      {products.length === 0 ? (
-        <p className="text-sm text-neutral-500">
-          All products have healthy stock
-        </p>
-      ) : (
-        <ul className="space-y-3">
-          {products.map((p) => (
-            <li
-              key={p._id || p.id}
-              className="flex items-center justify-between"
-            >
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-neutral-900">
-                  {p.title}
-                </span>
-                {p.category && (
-                  <span className="text-xs text-neutral-500">{p.category}</span>
-                )}
-              </div>
-              <Badge
-                variant="outline"
-                className="text-rose-600 border-rose-200"
-              >
-                {p.stock} left
-              </Badge>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Card>
-  );
-}
-
 export default function Dashboard() {
-  const [summary, setSummary] = useState(null);
-  const [ordersTrend, setOrdersTrend] = useState([]);
-  const [paymentsBreakdown, setPaymentsBreakdown] = useState([]);
-  const [lowStock, setLowStock] = useState([]);
+  const [data, setData] = useState({
+    summary: null,
+    ordersTrend: [],
+    paymentsBreakdown: [],
+    lowStock: [],
+  });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const headers = {
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
+    const fetchDashboardData = async () => {
+      const headers = {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      };
+
+      try {
+        const [summary, trend, payments, stock] = await Promise.all([
+          axios.get(`${API_BASE}/admin/analytics/summary`, { headers }),
+          axios.get(`${API_BASE}/admin/analytics/orders-trend`, { headers }),
+          axios.get(`${API_BASE}/admin/analytics/payments-breakdown`, {
+            headers,
+          }),
+          axios.get(`${API_BASE}/admin/analytics/low-stock`, { headers }),
+        ]);
+
+        setData({
+          summary: summary.data,
+          ordersTrend: trend.data,
+          paymentsBreakdown: payments.data,
+          lowStock: stock.data,
+        });
+      } catch (error) {
+        console.error('Dashboard fetch error:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    axios
-      .get(`${API_BASE}/admin/analytics/summary`, { headers })
-      .then((res) => setSummary(res.data));
-
-    axios
-      .get(`${API_BASE}/admin/analytics/orders-trend`, { headers })
-      .then((res) => setOrdersTrend(res.data));
-
-    axios
-      .get(`${API_BASE}/admin/analytics/payments-breakdown`, { headers })
-      .then((res) => setPaymentsBreakdown(res.data));
-
-    axios
-      .get(`${API_BASE}/admin/analytics/low-stock`, { headers })
-      .then((res) => setLowStock(res.data));
+    fetchDashboardData();
   }, []);
 
-  const exportOrders = () => exportToCSV('orders-trend.csv', ordersTrend);
+  // Export Handlers
+  const handleExportOrders = () =>
+    exportToCSV('orders-trend.csv', data.ordersTrend);
 
-  const exportPayments = () =>
+  const handleExportLowStock = () =>
     exportToCSV(
-      'payments-breakdown.csv',
-      paymentsBreakdown.map((p) => ({
-        provider: p._id?.provider,
-        status: p._id?.status,
-        count: p.count,
-      }))
-    );
-
-  const exportLowStock = () =>
-    exportToCSV(
-      'low-stock-products.csv',
-      lowStock.map((p) => ({
+      'low-stock.csv',
+      data.lowStock.map((p) => ({
         title: p.title,
         category: p.category,
         stock: p.stock,
       }))
     );
 
+  const handleExportPayments = () =>
+    exportToCSV(
+      'payments.csv',
+      data.paymentsBreakdown.map((p) => ({
+        provider: p._id?.provider,
+        status: p._id?.status,
+        count: p.count,
+      }))
+    );
+
+  if (loading)
+    return (
+      <div className="p-10 text-neutral-500 animate-pulse">
+        Loading analytics...
+      </div>
+    );
+
   return (
-    <div className="flex flex-col gap-8">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Dashboard</h1>
-        <p className="text-sm text-neutral-500">Store performance overview</p>
+        <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">
+          Dashboard
+        </h1>
+        <p className="text-sm text-neutral-500">
+          Real-time store performance and health
+        </p>
       </div>
 
+      {/* Top Stats Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Metric label="Revenue" value={summary?.revenue ?? '—'} />
-        <Metric label="Orders" value={summary?.totalOrders ?? '—'} />
-        <Metric label="Customers" value={summary?.totalUsers ?? '—'} />
-        <Metric label="Products" value={summary?.totalProducts ?? '—'} />
+        <StatCard
+          label="Total Revenue"
+          value={`₹${data.summary?.revenue || 0}`}
+          description="Last 30 days"
+        />
+        <StatCard label="Total Orders" value={data.summary?.totalOrders || 0} />
+        <StatCard
+          label="Active Customers"
+          value={data.summary?.totalUsers || 0}
+        />
+        <StatCard
+          label="Total Products"
+          value={data.summary?.totalProducts || 0}
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border border-neutral-200 bg-white p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-sm font-medium text-neutral-800">
-              Orders (last 30 days)
-            </div>
-            <Button size="sm" variant="outline" onClick={exportOrders}>
+      {/* Middle Section: Trends and Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 border border-neutral-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-sm font-bold text-neutral-800 text-center">
+              Order Trends
+            </h3>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleExportOrders}
+              className="h-8"
+            >
               Export CSV
             </Button>
           </div>
-          <OrdersTrendChart data={ordersTrend} />
+          <div className="h-[300px]">
+            <OrdersTrendChart data={data.ordersTrend} />
+          </div>
         </Card>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-end">
-            <Button size="sm" variant="outline" onClick={exportLowStock}>
-              Export CSV
-            </Button>
-          </div>
-          <LowStockCard products={lowStock} />
+        <div className="lg:col-span-1">
+          <LowStockProductsCard
+            products={data.lowStock}
+            onExport={handleExportLowStock}
+          />
         </div>
       </div>
 
-      <Card className="border border-neutral-200 bg-white p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-sm font-medium text-neutral-800">
-            Payments breakdown
-          </div>
-          <Button size="sm" variant="outline" onClick={exportPayments}>
+      {/* Bottom Section: Payments */}
+      <Card className="border border-neutral-200 bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-sm font-bold text-neutral-800">
+            Payments Breakdown
+          </h3>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleExportPayments}
+            className="h-8"
+          >
             Export CSV
           </Button>
         </div>
-        <PaymentsBreakdownCharts raw={paymentsBreakdown} />
+        <div className="min-h-[300px]">
+          <PaymentsBreakdownCharts raw={data.paymentsBreakdown} />
+        </div>
       </Card>
     </div>
   );

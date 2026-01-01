@@ -1,55 +1,62 @@
-//src/features/admin/pages/OrderDetails.jsx
-import { useEffect, useState, useMemo } from 'react';
+// src/features/admin/pages/OrderDetails.jsx
+
+import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { OrderTimeline } from '../components/order/OrderTimeline';
 import { OrderStatusCard } from '../components/order/OrderStatusCard';
 import { OrderPaymentCard } from '../components/order/OrderPaymentCard';
 import { OrderRefundCard } from '../components/order/OrderRefundCard';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
+import {
+  useOrderDetailsQuery,
+  useOrderStatusMutation,
+} from '../hooks/useOrderDetailsQuery';
 
 export default function OrderDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [order, setOrder] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
 
-  const fetchOrder = async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/orders/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      setOrder(res.data);
-    } catch (err) {
-      setOrder(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const orderQueryConfig = useOrderDetailsQuery(id);
+  const { data: order, isLoading, isError } = useQuery(orderQueryConfig);
 
-  useEffect(() => {
-    fetchOrder();
-  }, [id]);
+  const statusMutationConfig = useOrderStatusMutation();
+  const { mutateAsync: updateStatus, isLoading: updating } =
+    useMutation(statusMutationConfig);
 
   const timelineEvents = useMemo(() => {
     if (!order) return [];
-    let events = order.statusHistory?.length
-      ? order.statusHistory.map((h) => ({
+
+    const events = [];
+
+    if (order.statusHistory?.length) {
+      order.statusHistory.forEach((h) => {
+        events.push({
           label: `Status changed to "${h.to}"`,
           at: h.at,
           note: h.note,
-        }))
-      : [{ label: 'Order created', at: order.createdAt }];
+        });
+      });
+    } else {
+      events.push({
+        label: 'Order created',
+        at: order.createdAt,
+      });
+    }
 
-    if (!order.statusHistory?.length) {
-      if (order.paymentStatus === 'paid')
-        events.push({ label: 'Payment successful', at: order.paidAt });
-      if (order.paymentStatus === 'failed')
-        events.push({ label: 'Payment failed', at: order.updatedAt });
+    if (order.paymentStatus === 'paid' && order.paidAt) {
+      events.push({
+        label: 'Payment successful',
+        at: order.paidAt,
+      });
+    }
+
+    if (order.paymentStatus === 'failed') {
+      events.push({
+        label: 'Payment failed',
+        at: order.updatedAt,
+      });
     }
 
     return events.sort((a, b) => new Date(b.at) - new Date(a.at));
@@ -57,42 +64,43 @@ export default function OrderDetails() {
 
   const allowedTransitions = useMemo(() => {
     if (!order || order.status === 'cancelled') return [];
-    const transitions = {
+
+    const map = {
       pending: ['cancelled'],
       paid: ['shipped', 'cancelled'],
       shipped: ['delivered'],
       failed: ['cancelled'],
     };
-    return transitions[order.status] || [];
+
+    return map[order.status] || [];
   }, [order]);
 
   const handleStatusUpdate = async (status, note) => {
-    setUpdating(true);
-    await axios.put(
-      `${API_BASE}/orders/${order._id}/status`,
-      { status, note },
-      { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-    );
-    await fetchOrder();
-    setUpdating(false);
+    await updateStatus({
+      orderId: order._id,
+      status,
+      note,
+    });
   };
 
-  // 🔒 I-F3: Refund eligibility (locked after delivery)
   const refundEligible =
     order?.paymentStatus === 'paid' &&
     order?.status !== 'cancelled' &&
     order?.status !== 'delivered';
 
-  if (loading)
+  if (isLoading) {
     return <div className="p-6 text-sm text-slate-500">Loading order…</div>;
-  if (!order)
+  }
+
+  if (isError || !order) {
     return (
       <div className="p-6">
-        <Button onClick={() => navigate(-1)}>Order not found. Go back</Button>
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          Order not found. Go back
+        </Button>
       </div>
     );
-
-  <OrderRefundCard order={order} onRefunded={fetchOrder} />;
+  }
 
   const fulfillment = order.fulfillment || {};
 
@@ -115,6 +123,7 @@ export default function OrderDetails() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 flex flex-col gap-6">
           <OrderTimeline events={timelineEvents} />
+
           <OrderStatusCard
             order={order}
             allowedTransitions={allowedTransitions}
@@ -126,7 +135,8 @@ export default function OrderDetails() {
         <div className="flex flex-col gap-6">
           <OrderPaymentCard order={order} refundEligible={refundEligible} />
 
-          {/* 🚚 I-F4: Fulfillment */}
+          <OrderRefundCard order={order} onRefunded={() => null} />
+
           <Card className="border border-slate-200 bg-white p-6">
             <div className="text-sm font-medium text-slate-900 mb-4">
               Fulfillment

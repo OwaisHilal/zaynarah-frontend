@@ -1,50 +1,50 @@
-import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+// src/features/admin/pages/Payments.jsx
+
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { PaymentsTable } from '../components/payments/PaymentsTable';
 import { PaymentsFilters } from '../components/payments/PaymentsFilters';
 import { Pagination } from '../components/Pagination';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 
+const fetchPayments = async ({ queryKey }) => {
+  const [, { page, status, provider }] = queryKey;
+
+  const res = await fetch(
+    `${API_BASE}/admin/payments?` +
+      new URLSearchParams({
+        page,
+        ...(status ? { status } : {}),
+        ...(provider ? { provider } : {}),
+      }),
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    }
+  );
+
+  if (!res.ok) throw new Error('Failed to fetch payments');
+
+  return res.json();
+};
+
 export default function Payments() {
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-
   const [status, setStatus] = useState('');
   const [provider, setProvider] = useState('');
 
-  const fetchPayments = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${API_BASE}/admin/payments`, {
-        params: {
-          page,
-          ...(status ? { status } : {}),
-          ...(provider ? { provider } : {}),
-        },
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin-payments', { page, status, provider }],
+    queryFn: fetchPayments,
+    keepPreviousData: true,
+  });
 
-      setPayments(res.data.data || []);
-      setTotalPages(res.data.totalPages || 1);
-    } catch {
-      setPayments([]);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, status, provider]);
+  const payments = data?.data || [];
+  const totalPages = data?.totalPages || 1;
 
-  useEffect(() => {
-    fetchPayments();
-  }, [fetchPayments]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="p-8 text-center text-neutral-500 italic">
         Loading payments…

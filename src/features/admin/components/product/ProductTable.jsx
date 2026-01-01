@@ -1,28 +1,29 @@
+// src/features/admin/components/product/ProductTable.jsx
+
 import { ProductTableRow } from './ProductTableRow';
 
 export function ProductTable({
-  products,
-  selectedIds,
+  products = [],
+  selectedIds = [],
   onToggleSelect,
   onToggleSelectAll,
   onEdit,
   onDelete,
   deletingId,
 }) {
-  const allSelected =
-    products.length > 0 && selectedIds.length === products.length;
+  const ids = products.map((p) => p._id || p.id);
+  const allSelected = ids.length > 0 && selectedIds.length === ids.length;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
       <table className="w-full text-sm">
-        <thead className="bg-neutral-50 text-neutral-500 border-b border-neutral-200">
+        <thead className="bg-neutral-50 text-neutral-600 border-b border-neutral-200">
           <tr>
-            {/* Select all */}
-            <th className="px-4 py-3">
+            <th className="px-4 py-3 w-10">
               <input
                 type="checkbox"
                 checked={allSelected}
-                onChange={onToggleSelectAll}
+                onChange={() => onToggleSelectAll(ids)}
                 className="h-4 w-4 rounded border-neutral-300"
               />
             </th>
@@ -36,31 +37,31 @@ export function ProductTable({
         </thead>
 
         <tbody className="divide-y divide-neutral-100">
-          {products.length > 0 ? (
-            products.map((p) => {
-              const id = p.id || p._id;
-
-              return (
-                <ProductTableRow
-                  key={id}
-                  product={p}
-                  isSelected={selectedIds.includes(id)}
-                  onToggleSelect={() => onToggleSelect(id)}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  isDeleting={deletingId === id}
-                />
-              );
-            })
-          ) : (
+          {products.length === 0 ? (
             <tr>
               <td
                 colSpan={6}
                 className="px-4 py-12 text-center text-neutral-500"
               >
-                No products found.
+                No products found matching your filters.
               </td>
             </tr>
+          ) : (
+            products.map((product) => {
+              const id = product._id || product.id;
+
+              return (
+                <ProductTableRow
+                  key={id}
+                  product={product}
+                  isSelected={selectedIds.includes(id)}
+                  onToggleSelect={() => onToggleSelect(id)}
+                  onEdit={() => onEdit(product)}
+                  onDelete={() => onDelete(id)}
+                  isDeleting={deletingId === id}
+                />
+              );
+            })
           )}
         </tbody>
       </table>

@@ -1,4 +1,7 @@
+// src/features/admin/components/dashboard/PaymentsBreakdownCharts.jsx
+
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
+import { useMemo } from 'react';
 
 const PROVIDER_COLORS = {
   stripe: '#6366f1',
@@ -10,15 +13,22 @@ const STATUS_COLORS = {
   paid: '#16a34a',
   pending: '#f59e0b',
   failed: '#dc2626',
+  unknown: '#94a3b8',
 };
 
 function normalize(data, key) {
   const map = {};
+
   data.forEach((row) => {
-    const k = row._id?.[key] || 'unknown';
-    map[k] = (map[k] || 0) + row.count;
+    const name = row?._id?.[key] || 'unknown';
+    const value = Number(row?.count) || 0;
+    map[name] = (map[name] || 0) + value;
   });
-  return Object.entries(map).map(([name, value]) => ({ name, value }));
+
+  return Object.entries(map).map(([name, value]) => ({
+    name,
+    value,
+  }));
 }
 
 function Empty() {
@@ -29,9 +39,10 @@ function Empty() {
   );
 }
 
-export default function PaymentsBreakdownCharts({ raw }) {
-  const byProvider = normalize(raw, 'provider');
-  const byStatus = normalize(raw, 'status');
+export default function PaymentsBreakdownCharts({ raw = [] }) {
+  const byProvider = useMemo(() => normalize(raw, 'provider'), [raw]);
+
+  const byStatus = useMemo(() => normalize(raw, 'status'), [raw]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -94,7 +105,7 @@ export default function PaymentsBreakdownCharts({ raw }) {
                   {byStatus.map((e) => (
                     <Cell
                       key={e.name}
-                      fill={STATUS_COLORS[e.name] || '#94a3b8'}
+                      fill={STATUS_COLORS[e.name] || STATUS_COLORS.unknown}
                     />
                   ))}
                 </Pie>

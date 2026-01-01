@@ -1,16 +1,15 @@
-//src/features/admin/components/product/ProductFilters.jsx
+// src/features/admin/components/product/ProductFilters.jsx
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useProductsStore } from '../../stores/productsStore';
 
-export function ProductFilters({
-  category,
-  search,
-  onCategoryChange,
-  onSearchChange,
-  onAddClick,
-}) {
+export function ProductFilters() {
+  const { category, searchInput, setCategory, setSearchInput, clearSelection } =
+    useProductsStore();
+
   return (
-    <div className="flex items-center justify-between gap-4 flex-wrap">
+    <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
         <h1 className="text-xl font-semibold text-neutral-900">Products</h1>
         <p className="text-sm text-neutral-500">
@@ -19,20 +18,17 @@ export function ProductFilters({
       </div>
 
       <div className="flex items-center gap-3">
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search products…"
-          className="w-64 border border-neutral-200 rounded-md px-3 py-2 text-sm bg-white
-                     focus:outline-none focus:ring-2 focus:ring-slate-400"
+          className="w-64"
         />
 
         <select
           value={category}
-          onChange={(e) => onCategoryChange(e.target.value)}
-          className="border border-neutral-200 rounded-md px-3 py-2 text-sm bg-white
-                     focus:outline-none focus:ring-2 focus:ring-slate-400"
+          onChange={(e) => setCategory(e.target.value)}
+          className="h-9 rounded-md border border-neutral-200 bg-white px-3 text-sm outline-none focus:ring-2 focus:ring-slate-400"
         >
           <option value="">All categories</option>
           <option value="shirts">Shirts</option>
@@ -41,7 +37,7 @@ export function ProductFilters({
           <option value="accessories">Accessories</option>
         </select>
 
-        <Button onClick={onAddClick}>Add product</Button>
+        <Button onClick={clearSelection}>Add product</Button>
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+// src/features/admin/components/dashboard/OrdersTrendChart.jsx
+
 import {
   ResponsiveContainer,
   LineChart,
@@ -7,14 +9,28 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts';
+import { useMemo } from 'react';
 
 function formatDate(value) {
-  const d = new Date(value);
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
-export default function OrdersTrendChart({ data }) {
-  if (!data || data.length === 0) {
+export default function OrdersTrendChart({ data = [] }) {
+  const normalizedData = useMemo(
+    () =>
+      data.map((d) => ({
+        date: d._id,
+        count: Number(d.count) || 0,
+      })),
+    [data]
+  );
+
+  if (normalizedData.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-sm text-neutral-500">
         No order data available
@@ -26,12 +42,12 @@ export default function OrdersTrendChart({ data }) {
     <div className="h-64">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
-          data={data}
+          data={normalizedData}
           margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
-            dataKey="_id"
+            dataKey="date"
             tickFormatter={formatDate}
             tick={{ fontSize: 12, fill: '#6b7280' }}
           />

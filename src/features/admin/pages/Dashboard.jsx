@@ -1,58 +1,28 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+// src/features/admin/pages/Dashboard.jsx
+
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
+import { useQuery } from '@tanstack/react-query';
 import OrdersTrendChart from '../components/dashboard/OrdersTrendChart';
 import PaymentsBreakdownCharts from '../components/dashboard/PaymentsBreakdownCharts';
 import { LowStockProductsCard } from '../components/dashboard/LowStockProductsCard';
 import { StatCard } from '../components/dashboard/StatCard';
 import { exportToCSV } from '../utils/exportCsv';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
+import { useAdminDashboardQuery } from '../hooks/useAdminDashboardQuery';
 
 export default function Dashboard() {
-  const [data, setData] = useState({
-    summary: null,
-    ordersTrend: [],
-    paymentsBreakdown: [],
-    lowStock: [],
-  });
-  const [loading, setLoading] = useState(true);
+  const queryConfig = useAdminDashboardQuery();
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      const headers = {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      };
+  const { data, isLoading } = useQuery(queryConfig);
 
-      try {
-        const [summary, trend, payments, stock] = await Promise.all([
-          axios.get(`${API_BASE}/admin/analytics/summary`, { headers }),
-          axios.get(`${API_BASE}/admin/analytics/orders-trend`, { headers }),
-          axios.get(`${API_BASE}/admin/analytics/payments-breakdown`, {
-            headers,
-          }),
-          axios.get(`${API_BASE}/admin/analytics/low-stock`, { headers }),
-        ]);
+  if (isLoading) {
+    return (
+      <div className="p-10 text-neutral-500 animate-pulse">
+        Loading analytics...
+      </div>
+    );
+  }
 
-        setData({
-          summary: summary.data,
-          ordersTrend: trend.data,
-          paymentsBreakdown: payments.data,
-          lowStock: stock.data,
-        });
-      } catch (error) {
-        console.error('Dashboard fetch error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-  // Export Handlers
   const handleExportOrders = () =>
     exportToCSV('orders-trend.csv', data.ordersTrend);
 
@@ -76,13 +46,6 @@ export default function Dashboard() {
       }))
     );
 
-  if (loading)
-    return (
-      <div className="p-10 text-neutral-500 animate-pulse">
-        Loading analytics...
-      </div>
-    );
-
   return (
     <div className="space-y-8">
       <div>
@@ -94,7 +57,6 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Top Stats Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total Revenue"
@@ -112,13 +74,10 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Middle Section: Trends and Alerts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border border-neutral-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-bold text-neutral-800 text-center">
-              Order Trends
-            </h3>
+            <h3 className="text-sm font-bold text-neutral-800">Order Trends</h3>
             <Button
               size="sm"
               variant="outline"
@@ -133,15 +92,12 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <div className="lg:col-span-1">
-          <LowStockProductsCard
-            products={data.lowStock}
-            onExport={handleExportLowStock}
-          />
-        </div>
+        <LowStockProductsCard
+          products={data.lowStock}
+          onExport={handleExportLowStock}
+        />
       </div>
 
-      {/* Bottom Section: Payments */}
       <Card className="border border-neutral-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-sm font-bold text-neutral-800">

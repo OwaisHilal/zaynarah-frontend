@@ -1,8 +1,25 @@
+// src/features/admin/components/dashboard/LowStockProductsCard.jsx
+
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useMemo } from 'react';
 
-export function LowStockProductsCard({ products, onExport }) {
+export function LowStockProductsCard({ products = [], onExport }) {
+  const count = products.length;
+
+  const normalizedProducts = useMemo(
+    () =>
+      products.map((p) => ({
+        id: p._id || p.id,
+        title: p.title,
+        category: p.category,
+        stock: Number(p.stock) || 0,
+        percentage: Math.min(100, (Number(p.stock) / 10) * 100),
+      })),
+    [products]
+  );
+
   return (
     <Card className="border border-neutral-200 bg-white flex flex-col h-full shadow-sm">
       <div className="p-6 border-b border-neutral-100 flex items-center justify-between">
@@ -11,13 +28,14 @@ export function LowStockProductsCard({ products, onExport }) {
             Low Stock Alerts
           </span>
           <Badge variant="destructive" className="rounded-sm px-1.5 h-5">
-            {products.length}
+            {count}
           </Badge>
         </div>
         <Button
           size="sm"
           variant="outline"
           onClick={onExport}
+          disabled={count === 0}
           className="h-8 text-xs"
         >
           Export
@@ -25,7 +43,7 @@ export function LowStockProductsCard({ products, onExport }) {
       </div>
 
       <div className="p-6 overflow-auto max-h-[400px]">
-        {products.length === 0 ? (
+        {count === 0 ? (
           <div className="text-center py-10">
             <p className="text-sm text-neutral-500">
               All products are well stocked.
@@ -33,9 +51,9 @@ export function LowStockProductsCard({ products, onExport }) {
           </div>
         ) : (
           <ul className="space-y-4">
-            {products.map((p) => (
+            {normalizedProducts.map((p) => (
               <li
-                key={p._id || p.id}
+                key={p.id}
                 className="flex items-center justify-between group"
               >
                 <div className="flex flex-col">
@@ -53,7 +71,7 @@ export function LowStockProductsCard({ products, onExport }) {
                   <div className="w-12 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-rose-500"
-                      style={{ width: `${(p.stock / 10) * 100}%` }}
+                      style={{ width: `${p.percentage}%` }}
                     />
                   </div>
                 </div>

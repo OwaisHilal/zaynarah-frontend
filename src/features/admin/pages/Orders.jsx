@@ -1,71 +1,52 @@
-import { useEffect, useState, useCallback } from 'react';
+// src/features/admin/pages/Orders.jsx
+
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { OrderFilters } from '../components/order/OrderFilters';
 import { OrderTableRow, OrderSkeleton } from '../components/order/OrderTable';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
-const PAGE_SIZE = 20;
+import { useOrdersQuery } from '../hooks/useOrdersQuery';
+import { useOrdersFiltersStore } from '../stores/ordersFiltersStore';
 
 export default function Orders() {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(false);
 
-  const [filters, setFilters] = useState({
-    page: 1,
-    status: '',
-    paymentStatus: '',
-    from: '',
-    to: '',
+  const { page, status, paymentStatus, from, to, setPage, resetFilters } =
+    useOrdersFiltersStore();
+
+  const { queryKey, queryFn, keepPreviousData } = useOrdersQuery({
+    page,
+    status,
+    paymentStatus,
+    from,
+    to,
   });
 
-  const fetchOrders = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        ...filters,
-        limit: PAGE_SIZE,
-      });
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey,
+    queryFn,
+    keepPreviousData,
+  });
 
-      const res = await axios.get(`${API_BASE}/orders?${params}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-
-      setOrders(res.data || []);
-      setHasMore(res.data?.length === PAGE_SIZE);
-    } catch {
-      setOrders([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters]);
-
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
-
-  const clearFilters = () => {
-    setFilters({ page: 1, status: '', paymentStatus: '', from: '', to: '' });
-  };
+  const orders = data?.orders || [];
+  const hasMore = data?.hasMore;
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">Orders</h1>
-        <p className="text-sm text-slate-500">
-          Review and manage customer orders
-        </p>
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900">Orders</h1>
+          <p className="text-sm text-slate-500">
+            Review and manage customer orders
+          </p>
+        </div>
+        {isFetching && (
+          <span className="text-xs text-slate-400">Updating…</span>
+        )}
       </div>
 
-      <OrderFilters
-        filters={filters}
-        setFilters={setFilters}
-        onClear={clearFilters}
-      />
+      <OrderFilters onClear={resetFilters} />
 
       <Card className="border border-slate-200 bg-white overflow-hidden">
         <div className="overflow-x-auto">
@@ -81,8 +62,9 @@ export default function Orders() {
                 <th className="px-6 py-3"></th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-slate-200">
-              {loading ? (
+              {isLoading ? (
                 <OrderSkeleton />
               ) : orders.length > 0 ? (
                 orders.map((order) => (
@@ -96,9 +78,9 @@ export default function Orders() {
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-6 py-12 text-center text-slate-500 italic"
+                    className="px-6 py-16 text-center text-slate-500"
                   >
-                    No orders found matching your filters.
+                    No orders found for the selected filters
                   </td>
                 </tr>
               )}
@@ -107,21 +89,21 @@ export default function Orders() {
         </div>
 
         <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4 bg-slate-50/50">
-          <span className="text-sm text-slate-500">Page {filters.page}</span>
+          <span className="text-sm text-slate-500">Page {page}</span>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={filters.page === 1 || loading}
-              onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}
+              disabled={page === 1 || isFetching}
+              onClick={() => setPage(page - 1)}
             >
               Previous
             </Button>
             <Button
               variant="outline"
               size="sm"
-              disabled={!hasMore || loading}
-              onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}
+              disabled={!hasMore || isFetching}
+              onClick={() => setPage(page + 1)}
             >
               Next
             </Button>

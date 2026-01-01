@@ -1,53 +1,70 @@
+// src/features/admin/components/order/OrderPaymentCard.jsx
+
 import { Card } from '@/components/ui/card';
 import { Pill } from '../Pill';
+import { useMemo } from 'react';
 
 export function OrderPaymentCard({ order }) {
-  const refundEligible =
-    order.paymentStatus === 'paid' && order.status !== 'cancelled';
+  const {
+    paymentStatus,
+    paymentProvider,
+    paymentIntentId,
+    paidAt,
+    status,
+    fulfillment,
+  } = order || {};
 
-  const hasFulfillment =
-    order.fulfillment &&
-    (order.fulfillment.trackingId || order.fulfillment.carrier);
+  const paymentTone = useMemo(
+    () =>
+      ({
+        paid: 'success',
+        failed: 'danger',
+        pending: 'warning',
+      }[paymentStatus] || 'neutral'),
+    [paymentStatus]
+  );
+
+  const refundEligible =
+    paymentStatus === 'paid' &&
+    status !== 'cancelled' &&
+    status !== 'delivered';
+
+  const hasFulfillment = Boolean(
+    fulfillment?.carrier || fulfillment?.trackingId
+  );
+
+  const paidAtLabel = useMemo(() => {
+    if (!paidAt) return '—';
+    const d = new Date(paidAt);
+    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString();
+  }, [paidAt]);
 
   return (
     <div className="flex flex-col gap-6">
       <Card className="border border-slate-200 bg-white p-6">
         <div className="text-sm font-medium text-slate-900 mb-4">Payment</div>
+
         <div className="flex flex-col gap-2 text-sm">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-slate-500">Status</span>
-            <Pill
-              tone={
-                order.paymentStatus === 'paid'
-                  ? 'success'
-                  : order.paymentStatus === 'failed'
-                  ? 'danger'
-                  : 'warning'
-              }
-            >
-              {order.paymentStatus}
-            </Pill>
+            <Pill tone={paymentTone}>{paymentStatus || 'unknown'}</Pill>
           </div>
 
           <div className="flex justify-between">
             <span className="text-slate-500">Provider</span>
-            <span className="text-slate-900">
-              {order.paymentProvider || '—'}
-            </span>
+            <span className="text-slate-900">{paymentProvider || '—'}</span>
           </div>
 
           <div className="flex justify-between">
             <span className="text-slate-500">Payment ID</span>
-            <span className="text-slate-900 truncate max-w-[140px]">
-              {order.paymentIntentId || '—'}
+            <span className="text-slate-900 truncate max-w-[160px]">
+              {paymentIntentId || '—'}
             </span>
           </div>
 
           <div className="flex justify-between">
             <span className="text-slate-500">Paid at</span>
-            <span className="text-slate-900">
-              {order.paidAt ? new Date(order.paidAt).toLocaleString() : '—'}
-            </span>
+            <span className="text-slate-900">{paidAtLabel}</span>
           </div>
         </div>
       </Card>
@@ -62,14 +79,14 @@ export function OrderPaymentCard({ order }) {
             <div className="flex justify-between">
               <span className="text-slate-500">Carrier</span>
               <span className="text-slate-900">
-                {order.fulfillment.carrier || '—'}
+                {fulfillment?.carrier || '—'}
               </span>
             </div>
 
             <div className="flex justify-between">
               <span className="text-slate-500">Tracking ID</span>
               <span className="text-slate-900 truncate max-w-[160px]">
-                {order.fulfillment.trackingId || '—'}
+                {fulfillment?.trackingId || '—'}
               </span>
             </div>
           </div>

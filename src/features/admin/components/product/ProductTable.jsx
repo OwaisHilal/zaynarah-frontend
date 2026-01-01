@@ -1,6 +1,7 @@
 // src/features/admin/components/product/ProductTable.jsx
-
+import React from 'react';
 import { ProductTableRow } from './ProductTableRow';
+import { cn } from '@/lib/utils';
 
 export function ProductTable({
   products = [],
@@ -15,41 +16,48 @@ export function ProductTable({
   const allSelected = ids.length > 0 && selectedIds.length === ids.length;
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
-      <table className="w-full text-sm">
-        <thead className="bg-neutral-50 text-neutral-600 border-b border-neutral-200">
-          <tr>
-            <th className="px-4 py-3 w-10">
-              <input
-                type="checkbox"
-                checked={allSelected}
-                onChange={() => onToggleSelectAll(ids)}
-                className="h-4 w-4 rounded border-neutral-300"
-              />
-            </th>
-
-            <th className="px-4 py-3 text-left font-medium">Product</th>
-            <th className="px-4 py-3 text-left font-medium">Price</th>
-            <th className="px-4 py-3 text-left font-medium">Stock</th>
-            <th className="px-4 py-3 text-left font-medium">Status</th>
-            <th className="px-4 py-3 text-right font-medium">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody className="divide-y divide-neutral-100">
-          {products.length === 0 ? (
+    <div className="relative overflow-hidden">
+      {' '}
+      <div className="overflow-x-auto">
+        {' '}
+        <table className="w-full text-sm text-left border-collapse">
+          {' '}
+          <thead className="bg-slate-50/50 text-slate-500 border-b border-slate-100">
+            {' '}
             <tr>
-              <td
-                colSpan={6}
-                className="px-4 py-12 text-center text-neutral-500"
-              >
-                No products found matching your filters.
-              </td>
-            </tr>
-          ) : (
-            products.map((product) => {
+              {' '}
+              <th className="px-6 py-4 w-12">
+                {' '}
+                <div className="flex items-center justify-center">
+                  {' '}
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={() => onToggleSelectAll(ids)}
+                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 focus:ring-offset-0 transition-all cursor-pointer"
+                  />{' '}
+                </div>{' '}
+              </th>{' '}
+              <th className="px-4 py-4 font-black uppercase tracking-widest text-[10px]">
+                Product Details
+              </th>{' '}
+              <th className="px-4 py-4 font-black uppercase tracking-widest text-[10px]">
+                Category
+              </th>{' '}
+              <th className="px-4 py-4 font-black uppercase tracking-widest text-[10px]">
+                Valuation
+              </th>{' '}
+              <th className="px-4 py-4 font-black uppercase tracking-widest text-[10px]">
+                Inventory Status
+              </th>{' '}
+              <th className="px-6 py-4 font-black uppercase tracking-widest text-[10px] text-right">
+                Operations
+              </th>{' '}
+            </tr>{' '}
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {products.map((product) => {
               const id = product._id || product.id;
-
               return (
                 <ProductTableRow
                   key={id}
@@ -61,10 +69,10 @@ export function ProductTable({
                   isDeleting={deletingId === id}
                 />
               );
-            })
-          )}
-        </tbody>
-      </table>
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

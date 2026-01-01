@@ -8,6 +8,7 @@ import OrderDetails from '../pages/OrderDetails';
 import Products from '../pages/Products';
 import Users from '../pages/Users';
 import Payments from '../pages/Payments';
+import AdminSettings from '../pages/Settings';
 
 export default function AdminRoutes() {
   const { allowed, loading } = useAdminGuard();
@@ -26,6 +27,8 @@ export default function AdminRoutes() {
 
         <Route path="users" element={<Users />} />
         <Route path="payments" element={<Payments />} />
+
+        <Route path="settings" element={<AdminSettings />} />
 
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>

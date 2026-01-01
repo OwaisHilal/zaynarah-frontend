@@ -1,121 +1,86 @@
-// src/features/admin/pages/Dashboard.jsx
-
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Zap, ShoppingBag, Users, Package } from 'lucide-react';
+
+// UI and Components
+import { DashboardHeader } from '../components/dashboard/DashboardHeader';
+import { SystemHealthCard } from '../components/dashboard/SystemHealthCard';
+import { StrategyAssistant } from '../components/dashboard/StrategyAssistant'; // Extract this too!
+import { StatCard } from '../components/dashboard/StatCard';
 import OrdersTrendChart from '../components/dashboard/OrdersTrendChart';
 import PaymentsBreakdownCharts from '../components/dashboard/PaymentsBreakdownCharts';
 import { LowStockProductsCard } from '../components/dashboard/LowStockProductsCard';
-import { StatCard } from '../components/dashboard/StatCard';
+import DashboardSkeleton from '../components/dashboard/DashboardSkeleton';
+
+// Utils / Hooks
 import { exportToCSV } from '../utils/exportCsv';
 import { useAdminDashboardQuery } from '../hooks/useAdminDashboardQuery';
 
 export default function Dashboard() {
   const queryConfig = useAdminDashboardQuery();
+  const { data, isLoading, isRefetching, refetch } = useQuery(queryConfig);
+  const [activeRange, setActiveRange] = useState('30d');
 
-  const { data, isLoading } = useQuery(queryConfig);
+  if (isLoading) return <DashboardSkeleton />;
 
-  if (isLoading) {
-    return (
-      <div className="p-10 text-neutral-500 animate-pulse">
-        Loading analytics...
-      </div>
-    );
-  }
-
-  const handleExportOrders = () =>
-    exportToCSV('orders-trend.csv', data.ordersTrend);
-
-  const handleExportLowStock = () =>
-    exportToCSV(
-      'low-stock.csv',
-      data.lowStock.map((p) => ({
+  // logic for exports
+  const handleExport = (type) => {
+    if (type === 'orders') exportToCSV('orders-trend.csv', data.ordersTrend);
+    if (type === 'lowStock') {
+      const mapped = data.lowStock.map((p) => ({
         title: p.title,
         category: p.category,
         stock: p.stock,
-      }))
-    );
-
-  const handleExportPayments = () =>
-    exportToCSV(
-      'payments.csv',
-      data.paymentsBreakdown.map((p) => ({
-        provider: p._id?.provider,
-        status: p._id?.status,
-        count: p.count,
-      }))
-    );
+      }));
+      exportToCSV('low-stock.csv', mapped);
+    }
+  };
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">
-          Dashboard
-        </h1>
-        <p className="text-sm text-neutral-500">
-          Real-time store performance and health
-        </p>
-      </div>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <DashboardHeader
+        onRangeChange={setActiveRange}
+        onRefresh={() => refetch()}
+        isRefetching={isRefetching}
+      />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total Revenue"
-          value={`₹${data.summary?.revenue || 0}`}
-          description="Last 30 days"
-        />
-        <StatCard label="Total Orders" value={data.summary?.totalOrders || 0} />
-        <StatCard
-          label="Active Customers"
-          value={data.summary?.totalUsers || 0}
+          label="Gross Revenue"
+          value={`₹${(data.summary?.revenue || 0).toLocaleString()}`}
+          trend="+14.2%"
+          trendType="up"
+          icon={<Zap className="text-indigo-600" size={20} />}
+          primary
         />
         <StatCard
-          label="Total Products"
-          value={data.summary?.totalProducts || 0}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border border-neutral-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-sm font-bold text-neutral-800">Order Trends</h3>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleExportOrders}
-              className="h-8"
-            >
-              Export CSV
-            </Button>
-          </div>
-          <div className="h-[300px]">
-            <OrdersTrendChart data={data.ordersTrend} />
-          </div>
-        </Card>
-
-        <LowStockProductsCard
-          products={data.lowStock}
-          onExport={handleExportLowStock}
+          label="Total Orders"
+          value={data.summary?.totalOrders || 0}
+          trend="+8.1%"
+          trendType="up"
+          icon={<ShoppingBag className="text-blue-600" size={20} />}
         />
       </div>
 
-      <Card className="border border-neutral-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-sm font-bold text-neutral-800">
-            Payments Breakdown
-          </h3>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleExportPayments}
-            className="h-8"
-          >
-            Export CSV
-          </Button>
-        </div>
-        <div className="min-h-[300px]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          {/* Revenue Chart Section - You could even extract this to 'RevenueDynamicsCard.jsx' */}
+          <OrdersTrendChart
+            data={data.ordersTrend}
+            onExport={() => handleExport('orders')}
+          />
           <PaymentsBreakdownCharts raw={data.paymentsBreakdown} />
         </div>
-      </Card>
+
+        <div className="space-y-8">
+          <LowStockProductsCard
+            products={data.lowStock}
+            onExport={() => handleExport('lowStock')}
+          />
+          <StrategyAssistant />
+          <SystemHealthCard />
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,43 +1,66 @@
-//frontend/src/features/notifications/services/notificationsSse.js
-
+// frontend/src/features/notifications/services/notificationsSse.js
 let eventSource = null;
+let reconnectTimeout = null;
 
 export function connectNotificationsSSE({ token, onMessage }) {
-  if (!token || eventSource) return;
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
+  }
 
-  const url =
-    `${import.meta.env.VITE_API_BASE || 'http://localhost:5000/api'}` +
-    `/notifications/stream`;
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null;
+  }
 
-  eventSource = new EventSource(url, {
-    withCredentials: false,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  if (!token) return;
+
+  const baseUrl = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
+  const url = `${baseUrl}/notifications/stream?token=${encodeURIComponent(
+    token
+  )}`;
+
+  eventSource = new EventSource(url);
+
+  eventSource.onopen = () => {
+    console.log('[SSE] Connection established');
+  };
 
   eventSource.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      onMessage(data);
-    } catch {
-      /* ignore */
+      if (data.status === 'ok') return;
+
+      if (onMessage) {
+        onMessage(data);
+      }
+    } catch (err) {
+      console.error('[SSE] Data parse error:', err);
     }
   };
 
-  eventSource.onerror = () => {
-    eventSource?.close();
+  eventSource.onerror = (err) => {
+    console.error('[SSE] Connection failed.');
+    eventSource.close();
     eventSource = null;
 
-    setTimeout(() => {
-      connectNotificationsSSE({ token, onMessage });
-    }, 3000);
+    if (token && localStorage.getItem('token')) {
+      reconnectTimeout = setTimeout(() => {
+        console.log('[SSE] Retrying connection...');
+        connectNotificationsSSE({ token, onMessage });
+      }, 5000);
+    }
   };
 }
 
 export function disconnectNotificationsSSE() {
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
+  }
   if (eventSource) {
     eventSource.close();
     eventSource = null;
+    console.log('[SSE] Disconnected');
   }
 }

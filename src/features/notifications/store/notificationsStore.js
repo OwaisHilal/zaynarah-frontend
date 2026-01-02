@@ -1,5 +1,4 @@
-//frontend/src/features/notifications/store/notificationsStore.js
-
+// frontend/src/features/notifications/store/notificationsStore.js
 import { create } from 'zustand';
 import {
   fetchNotifications,
@@ -8,58 +7,86 @@ import {
   markAllNotificationsRead,
 } from '../services/notificationsApi';
 
-export const useNotificationsStore = create((set, get) => ({
+const initialState = {
   items: [],
   unreadCount: 0,
   loading: false,
   page: 1,
   hasMore: true,
+  error: null,
+};
+
+export const useNotificationsStore = create((set, get) => ({
+  ...initialState,
 
   loadUnreadCount: async () => {
-    const count = await fetchUnreadCount();
-    set({ unreadCount: count });
+    const token = localStorage.getItem('token');
+    if (!token) return; // Exit early if token isn't written yet
+
+    try {
+      const count = await fetchUnreadCount();
+      set({ unreadCount: count, error: null });
+    } catch (err) {
+      // Don't set error state for auth issues to prevent render loops
+      if (err.response?.status !== 401 && err.message !== 'Unauthorized') {
+        console.error('Failed to load unread count:', err);
+        set({ error: err.message });
+      }
+    }
   },
 
   loadNotifications: async ({ reset = false } = {}) => {
-    const page = reset ? 1 : get().page;
-    set({ loading: true });
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-    const data = await fetchNotifications({ page });
+    try {
+      const page = reset ? 1 : get().page;
+      set({ loading: true, error: null });
 
-    set((state) => ({
-      items: reset ? data : [...state.items, ...data],
-      page: page + 1,
-      hasMore: data.length > 0,
-      loading: false,
-    }));
+      const data = await fetchNotifications({ page });
+
+      set((state) => ({
+        items: reset ? data : [...state.items, ...data],
+        page: page + 1,
+        hasMore: data && data.length > 0,
+        loading: false,
+      }));
+    } catch (err) {
+      set({ loading: false });
+      if (err.response?.status !== 401 && err.message !== 'Unauthorized') {
+        console.error('Failed to load notifications:', err);
+        set({ error: err.message });
+      }
+    }
   },
 
   markRead: async (id) => {
-    await markNotificationRead(id);
-    set((state) => ({
-      items: state.items.map((n) =>
-        n._id === id ? { ...n, readAt: new Date() } : n
-      ),
-      unreadCount: Math.max(0, state.unreadCount - 1),
-    }));
+    try {
+      await markNotificationRead(id);
+      set((state) => ({
+        items: state.items.map((n) =>
+          n._id === id ? { ...n, readAt: new Date() } : n
+        ),
+        unreadCount: Math.max(0, state.unreadCount - 1),
+      }));
+    } catch (err) {
+      console.error('Failed to mark notification as read:', err);
+    }
   },
 
   markAllRead: async () => {
-    await markAllNotificationsRead();
-    set((state) => ({
-      items: state.items.map((n) => ({ ...n, readAt: new Date() })),
-      unreadCount: 0,
-    }));
+    try {
+      await markAllNotificationsRead();
+      set((state) => ({
+        items: state.items.map((n) => ({ ...n, readAt: new Date() })),
+        unreadCount: 0,
+      }));
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
+    }
   },
 
-  reset: () => {
-    set({
-      items: [],
-      unreadCount: 0,
-      page: 1,
-      hasMore: true,
-    });
-  },
+  reset: () => set(initialState),
 
   pushNotification: (notification) => {
     set((state) => ({

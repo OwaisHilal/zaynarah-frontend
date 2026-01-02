@@ -1,5 +1,4 @@
-//frontend/src/features/notifications/hooks/useNotificationsSSE.js
-
+// frontend/src/features/notifications/hooks/useNotificationsSSE.js
 import { useEffect } from 'react';
 import {
   connectNotificationsSSE,
@@ -17,19 +16,21 @@ export default function useNotificationsSSE() {
   );
 
   useEffect(() => {
+    // 1. If no user, kill connection and exit
     if (!user) {
       disconnectNotificationsSSE();
       return;
     }
 
+    // 2. Double check token availability
     const token = localStorage.getItem('token');
     if (!token) return;
 
+    // 3. Connect
     connectNotificationsSSE({
       token,
       onMessage: (event) => {
         if (event?.type !== 'notification:new') return;
-
         const notification = event.payload;
 
         if (user.role === 'admin') {
@@ -41,5 +42,5 @@ export default function useNotificationsSSE() {
     });
 
     return () => disconnectNotificationsSSE();
-  }, [user]);
+  }, [user, pushUserNotification, pushAdminNotification]);
 }

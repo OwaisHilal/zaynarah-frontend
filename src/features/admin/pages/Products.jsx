@@ -119,7 +119,7 @@ export default function Products() {
             variant="outline"
             className="h-10 px-4 rounded-xl border-slate-200 bg-white text-slate-600 font-bold hidden sm:flex"
           >
-            {data?.totalProducts || 0} Total SKUs
+            {data?.totalProducts || 0} Total Products
           </Badge>
         </div>
       </div>

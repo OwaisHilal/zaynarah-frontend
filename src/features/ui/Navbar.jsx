@@ -5,6 +5,8 @@ import MobileMenu from './navbar/MobileMenu';
 import ThemeToggle from './navbar/ThemeToggle';
 import CartBadge from './navbar/CartBadge';
 import UserMenu from './navbar/UserMenu';
+import NotificationBell from '@/features/notifications/components/NotificationBell';
+
 import { useNavbarScroll } from './navbar/hooks/useNavbarScroll';
 
 import { Search } from 'lucide-react';
@@ -46,7 +48,9 @@ export default function Navbar() {
           <MiniCart>
             <CartBadge />
           </MiniCart>
+          <NotificationBell />
           <UserMenu />
+
           <MobileMenu />
         </div>
       </nav>

@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import { useCartStore } from '../../cart/hooks/cartStore';
+import { disconnectNotificationsSSE } from '@/features/notifications/services/notificationsSse';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 
@@ -52,6 +53,7 @@ export const useUserStore = create((set, get) => ({
   },
 
   logout: () => {
+    disconnectNotificationsSSE();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     set({ user: null, addresses: [] });

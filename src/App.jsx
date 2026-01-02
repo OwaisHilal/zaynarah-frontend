@@ -30,6 +30,7 @@ import SearchModal from '@/features/search/components/SearchModal';
 
 import { useUserStore } from './features/user/hooks/useUser';
 import AdminRoutes from './features/admin/routes/AdminRoutes';
+import useNotificationsSSE from './features/notifications/hooks/useNotificationsSSE';
 
 function ProtectedRoute({ children }) {
   const { user } = useUserStore();
@@ -110,6 +111,7 @@ function AdminApp() {
 }
 
 export default function App() {
+  useNotificationsSSE();
   return (
     <BrowserRouter>
       <Routes>

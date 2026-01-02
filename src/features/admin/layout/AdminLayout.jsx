@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import AdminNotificationBell from '../components/AdminNotificationBell';
 
 const navItems = [
   { name: 'Dashboard', path: '/admin', icon: LayoutDashboard, end: true },
@@ -210,14 +211,7 @@ export default function AdminLayout() {
               <HelpCircle size={20} />
             </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative text-slate-500 hover:bg-slate-50 rounded-xl"
-            >
-              <Bell size={20} />
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-indigo-600 ring-2 ring-white"></span>
-            </Button>
+            <AdminNotificationBell />
 
             <div className="h-6 w-[1px] bg-slate-200 mx-1 hidden md:block"></div>
 

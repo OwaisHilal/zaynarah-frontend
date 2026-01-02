@@ -1,22 +1,23 @@
 // frontend/src/features/notifications/components/NotificationDropdown.jsx
 import { useEffect, useRef } from 'react';
-import { useNotificationsStore } from '../store/notificationsStore';
-import NotificationItem from './NotificationItem';
 import { Link } from 'react-router-dom';
+import NotificationItem from './NotificationItem';
+import { useNotifications } from '../hooks/useNotifications';
+import { useMarkAsRead } from '../hooks/useMarkAsRead';
 
 export default function NotificationDropdown({ onClose, triggerRef }) {
   const ref = useRef(null);
-  const { items, loadNotifications, markRead } = useNotificationsStore();
+  const { data, fetchNextPage } = useNotifications();
+  const { markOne } = useMarkAsRead();
+
+  const items = data?.pages?.flat() ?? [];
 
   useEffect(() => {
-    loadNotifications({ reset: true });
-
     const onKey = (e) => {
       if (e.key === 'Escape') onClose();
     };
 
     const onClickOutside = (e) => {
-      // Check if click is outside BOTH the dropdown and the trigger button
       if (
         ref.current &&
         !ref.current.contains(e.target) &&
@@ -33,7 +34,7 @@ export default function NotificationDropdown({ onClose, triggerRef }) {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('mousedown', onClickOutside);
     };
-  }, [loadNotifications, onClose, triggerRef]);
+  }, [onClose, triggerRef]);
 
   return (
     <div
@@ -62,8 +63,11 @@ export default function NotificationDropdown({ onClose, triggerRef }) {
           </div>
         ) : (
           items.slice(0, 8).map((n) => (
-            <div key={n._id} className="block w-full text-left">
-              <NotificationItem notification={n} onRead={markRead} />
+            <div key={n.id} className="block w-full text-left">
+              <NotificationItem
+                notification={n}
+                onRead={(id) => markOne.mutate(id)}
+              />
             </div>
           ))
         )}

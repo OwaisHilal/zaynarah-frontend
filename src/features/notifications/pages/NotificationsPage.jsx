@@ -1,22 +1,18 @@
 // frontend/src/features/notifications/pages/NotificationsPage.jsx
 import { useEffect } from 'react';
-import { useNotificationsStore } from '../store/notificationsStore';
 import { useUserStore } from '../../user/hooks/useUser';
+import { useNotifications } from '../hooks/useNotifications';
+import { useMarkAsRead } from '../hooks/useMarkAsRead';
 import NotificationItem from '../components/NotificationItem';
 import NotificationsEmpty from '../components/NotificationsEmpty';
 import { Button } from '@/components/ui/button';
 
 export default function NotificationsPage() {
-  const { items, loadNotifications, markRead, markAllRead } =
-    useNotificationsStore();
   const { user } = useUserStore();
+  const { data, fetchNextPage, hasNextPage } = useNotifications();
+  const { markOne, markAll } = useMarkAsRead();
 
-  useEffect(() => {
-    if (user) {
-      loadNotifications({ reset: true });
-    }
-  }, [user, loadNotifications]);
-
+  const items = data?.pages?.flat() ?? [];
   const hasNotifications = items.length > 0;
 
   if (!user) {
@@ -36,7 +32,7 @@ export default function NotificationsPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
 
         {hasNotifications && (
-          <Button variant="outline" size="sm" onClick={markAllRead}>
+          <Button variant="outline" size="sm" onClick={() => markAll.mutate()}>
             Mark all as read
           </Button>
         )}
@@ -45,7 +41,11 @@ export default function NotificationsPage() {
       <div className="space-y-3">
         {hasNotifications ? (
           items.map((n) => (
-            <NotificationItem key={n._id} notification={n} onRead={markRead} />
+            <NotificationItem
+              key={n.id}
+              notification={n}
+              onRead={(id) => markOne.mutate(id)}
+            />
           ))
         ) : (
           <NotificationsEmpty
@@ -54,6 +54,14 @@ export default function NotificationsPage() {
           />
         )}
       </div>
+
+      {hasNextPage && (
+        <div className="mt-8 text-center">
+          <Button variant="ghost" onClick={() => fetchNextPage()}>
+            Load more
+          </Button>
+        </div>
+      )}
     </section>
   );
 }

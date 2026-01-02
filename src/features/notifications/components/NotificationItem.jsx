@@ -1,5 +1,4 @@
-//frontend/src/features/notifications/components/NotificationItem.jsx
-
+// frontend/src/features/notifications/components/NotificationItem.jsx
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +18,7 @@ export default function NotificationItem({ notification, onRead }) {
   return (
     <Link
       to={notification.actionUrl || '#'}
-      onClick={() => unread && onRead(notification._id)}
+      onClick={() => unread && onRead(notification.id)}
       className={cn(
         'group block rounded-xl border p-4 transition-all',
         unread

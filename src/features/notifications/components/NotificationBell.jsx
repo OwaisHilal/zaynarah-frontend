@@ -1,24 +1,16 @@
 // frontend/src/features/notifications/components/NotificationBell.jsx
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect, useRef, useState } from 'react';
-import { useNotificationsStore } from '../store/notificationsStore';
+import { useRef, useState } from 'react';
 import { useUserStore } from '../../user/hooks/useUser';
+import { useUnreadCount } from '../hooks/useUnreadCount';
 import NotificationDropdown from './NotificationDropdown';
 
 export default function NotificationBell() {
-  const { unreadCount, loadUnreadCount } = useNotificationsStore();
   const { user } = useUserStore();
+  const { data: unreadCount = 0 } = useUnreadCount();
   const [open, setOpen] = useState(false);
   const buttonRef = useRef(null);
-
-  useEffect(() => {
-    // Only fetch if user state exists AND token is present in storage
-    const token = localStorage.getItem('token');
-    if (user && token) {
-      loadUnreadCount();
-    }
-  }, [user, loadUnreadCount]);
 
   if (!user) return null;
 

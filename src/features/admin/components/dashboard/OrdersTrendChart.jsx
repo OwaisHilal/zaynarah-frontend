@@ -2,8 +2,8 @@
 
 import {
   ResponsiveContainer,
-  AreaChart, // Upgraded from LineChart
-  Area, // Upgraded from Line
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -16,7 +16,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { TrendingUp, Download } from 'lucide-react';
+import { TrendingUp, Download, IndianRupee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 function formatDate(value) {
@@ -28,22 +28,32 @@ function formatDate(value) {
   });
 }
 
-// Custom Tooltip component for a premium look
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+      <div className="bg-slate-950/90 backdrop-blur-md border border-slate-800 p-4 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3">
           {formatDate(label)}
         </p>
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-indigo-500" />
-          <p className="text-sm font-bold text-white">
-            Orders:{' '}
-            <span className="text-indigo-300 font-black">
-              {payload[0].value}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-8">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-indigo-500" />
+              <span className="text-xs font-bold text-slate-300">Revenue</span>
+            </div>
+            <span className="text-sm font-black text-white">
+              ₹{payload[1]?.value?.toLocaleString()}
             </span>
-          </p>
+          </div>
+          <div className="flex items-center justify-between gap-8">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-slate-400" />
+              <span className="text-xs font-bold text-slate-300">Orders</span>
+            </div>
+            <span className="text-sm font-black text-white">
+              {payload[0]?.value}
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -56,7 +66,8 @@ export default function OrdersTrendChart({ data = [], onExport }) {
     () =>
       data.map((d) => ({
         date: d._id,
-        count: Number(d.count) || 0,
+        count: Number(d.orders) || 0,
+        revenue: Number(d.revenue) || 0,
       })),
     [data]
   );
@@ -79,46 +90,45 @@ export default function OrdersTrendChart({ data = [], onExport }) {
           <div className="flex items-center gap-2 text-indigo-600">
             <TrendingUp size={16} />
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-              Growth Analytics
+              Performance Ledger
             </span>
           </div>
-          <CardTitle className="text-xl font-black text-slate-900">
-            Orders Trend
+          <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">
+            Revenue Dynamics
           </CardTitle>
-          <CardDescription className="font-medium">
-            Monitoring sales velocity and peak performance.
+          <CardDescription className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            Correlating daily order volume with gross sales
           </CardDescription>
         </div>
         {onExport && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={onExport}
-            className="h-9 rounded-xl font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
+            className="rounded-xl border-slate-200 font-bold text-xs text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
           >
-            <Download size={16} className="mr-2" />
-            CSV
+            <Download size={14} className="mr-2" />
+            Export Data
           </Button>
         )}
       </CardHeader>
 
-      <div className="h-72 w-full p-6 pt-10">
+      <div className="h-80 w-full p-6 pt-10">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={normalizedData}
             margin={{ top: 0, right: 10, left: -20, bottom: 0 }}
           >
             <defs>
-              <linearGradient id="orderGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
+              <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} />
                 <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
               </linearGradient>
             </defs>
 
-            {/* Cleaner Grid: Only horizontal lines */}
             <CartesianGrid
               vertical={false}
-              strokeDasharray="3 3"
+              strokeDasharray="0"
               stroke="#f1f5f9"
             />
 
@@ -127,31 +137,53 @@ export default function OrdersTrendChart({ data = [], onExport }) {
               axisLine={false}
               tickLine={false}
               tickFormatter={formatDate}
-              tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }}
-              dy={10}
+              tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 800 }}
+              dy={15}
             />
 
             <YAxis
+              yAxisId="left"
               axisLine={false}
               tickLine={false}
-              allowDecimals={false}
-              tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 700 }}
+              tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 800 }}
             />
 
             <Tooltip
               content={<CustomTooltip />}
-              cursor={{ stroke: '#e2e8f0', strokeWidth: 1 }}
+              cursor={{
+                stroke: '#e2e8f0',
+                strokeWidth: 2,
+                strokeDasharray: '4 4',
+              }}
             />
 
+            {/* Area for Orders (Background) */}
             <Area
-              type="monotone"
+              yAxisId="left"
+              type="stepAfter"
               dataKey="count"
+              stroke="#cbd5e1"
+              strokeWidth={1}
+              fill="transparent"
+              animationDuration={1500}
+            />
+
+            {/* Area for Revenue (Foreground) */}
+            <Area
+              yAxisId="left"
+              type="monotone"
+              dataKey="revenue"
               stroke="#6366f1"
-              strokeWidth={3}
+              strokeWidth={4}
               fillOpacity={1}
-              fill="url(#orderGradient)"
+              fill="url(#revenueGradient)"
               animationDuration={2000}
-              activeDot={{ r: 6, strokeWidth: 0, fill: '#4f46e5' }}
+              activeDot={{
+                r: 8,
+                strokeWidth: 4,
+                stroke: '#fff',
+                fill: '#6366f1 shadow-xl',
+              }}
             />
           </AreaChart>
         </ResponsiveContainer>

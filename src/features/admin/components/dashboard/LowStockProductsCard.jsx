@@ -1,164 +1,125 @@
 // frontend/src/features/admin/components/dashboard/LowStockProductsCard.jsx
 import React, { useMemo } from 'react';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  AlertCircle,
-  ArrowRight,
-  FileDown,
-  PackageSearch,
-  ChevronRight,
-  Zap,
-} from 'lucide-react';
+import { AlertCircle, Download, ArrowRight, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 
 export function LowStockProductsCard({ products = [], onExport }) {
-  const count = products.length;
-
   const normalizedProducts = useMemo(
     () =>
       products
-        .map((p) => {
-          const stock = Number(p.stock) || 0;
-          const isCritical = stock <= 2;
-          // Percentage calculation for a max visibility threshold of 10
-          return {
-            id: p._id || p.id,
-            title: p.title,
-            category: p.category,
-            stock: stock,
-            isCritical,
-            percentage: Math.min(100, (stock / 10) * 100),
-          };
-        })
-        .sort((a, b) => a.stock - b.stock),
+        .map((p) => ({
+          id: p._id || p.id,
+          title: p.title,
+          stock: Number(p.stock) || 0,
+          category: p.category,
+          isCritical: (Number(p.stock) || 0) <= 2,
+        }))
+        .sort((a, b) => a.stock - b.stock)
+        .slice(0, 6), // Keep it tight: only top 6 risks
     [products]
   );
 
   return (
-    <Card className="border-none ring-1 ring-slate-200 bg-white flex flex-col h-full shadow-xl shadow-slate-200/40 rounded-[32px] overflow-hidden">
-      {/* Header */}
-      <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-white">
-        <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              'h-10 w-10 rounded-xl flex items-center justify-center transition-colors',
-              count > 0
-                ? 'bg-rose-50 text-rose-600'
-                : 'bg-emerald-50 text-emerald-600'
-            )}
-          >
-            {count > 0 ? <AlertCircle size={20} /> : <Zap size={20} />}
-          </div>
-          <div>
-            <h3 className="text-sm font-black text-slate-900 leading-none">
-              Stock Alerts
-            </h3>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1.5">
-              {count === 0
-                ? 'Inventory Healthy'
-                : `${count} items below threshold`}
-            </p>
-          </div>
+    <Card className="border-none ring-1 ring-slate-200 bg-white rounded-[24px] shadow-sm overflow-hidden flex flex-col">
+      {/* Header: Tight & Minimal */}
+      <div className="px-6 py-4 flex items-center justify-between border-b border-slate-50">
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+          <h3 className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-900">
+            Inventory Risk
+          </h3>
         </div>
-        <Button
-          size="icon"
-          variant="ghost"
+        <button
           onClick={onExport}
-          disabled={count === 0}
-          className="rounded-xl hover:bg-slate-50 transition-all h-9 w-9"
+          className="text-slate-400 hover:text-slate-900 transition-colors"
         >
-          <FileDown size={18} className="text-slate-400" />
-        </Button>
+          <Download size={14} />
+        </button>
       </div>
 
-      {/* Content Area */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar min-h-[340px] max-h-[450px]">
-        {count === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
-            <div className="h-20 w-20 rounded-full bg-slate-50 flex items-center justify-center mb-4 border border-slate-100">
-              <PackageSearch className="text-slate-200" size={36} />
-            </div>
-            <p className="text-sm font-black text-slate-900">All Clear</p>
-            <p className="text-xs text-slate-400 mt-1 max-w-[200px] font-medium">
-              Your inventory levels are currently within safe parameters.
-            </p>
+      {/* Table-style List: Zero wasted space */}
+      <div className="flex-1">
+        {normalizedProducts.length === 0 ? (
+          <div className="py-12 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            System Nominal / No Risks
           </div>
         ) : (
-          <div className="divide-y divide-slate-50">
-            {normalizedProducts.map((p) => (
-              <div
-                key={p.id}
-                className="p-5 flex items-center justify-between hover:bg-slate-50/50 transition-all group"
-              >
-                <div className="flex flex-col gap-1 min-w-0 flex-1 pr-4">
-                  <span className="text-xs font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
-                    {p.title}
-                  </span>
-
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-1.5 py-0.5 rounded">
-                      {p.category}
-                    </span>
-                    <span
-                      className={cn(
-                        'text-[10px] font-black uppercase tracking-tight',
-                        p.isCritical ? 'text-rose-600' : 'text-amber-600'
-                      )}
-                    >
-                      {p.stock} Left
-                    </span>
-                  </div>
-
-                  {/* Progress Bar with Glow Effect for Critical */}
-                  <div className="w-full max-w-[160px] h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        'h-full transition-all duration-1000 ease-out rounded-full',
-                        p.isCritical
-                          ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]'
-                          : 'bg-amber-400'
-                      )}
-                      style={{ width: `${p.percentage}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {p.isCritical && (
-                    <div className="animate-pulse">
-                      <Badge className="bg-rose-50 text-rose-600 border-rose-100 text-[8px] font-black px-1.5 h-5 rounded-lg shadow-sm">
-                        REORDER
-                      </Badge>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="px-6 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                  Item
+                </th>
+                <th className="px-6 py-2 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">
+                  Qty
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {normalizedProducts.map((p) => (
+                <tr
+                  key={p.id}
+                  className="group hover:bg-slate-50/50 transition-colors"
+                >
+                  <td className="px-6 py-3">
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-bold text-slate-900 truncate max-w-[140px]">
+                        {p.title}
+                      </span>
+                      <span className="text-[9px] font-medium text-slate-400 uppercase tracking-tighter">
+                        {p.category}
+                      </span>
                     </div>
-                  )}
-                  <div className="h-8 w-8 rounded-xl border border-slate-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-white shadow-sm">
-                    <ChevronRight size={14} className="text-slate-400" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                  </td>
+                  <td className="px-6 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <span
+                        className={cn(
+                          'text-[11px] font-black tabular-nums',
+                          p.isCritical ? 'text-rose-600' : 'text-amber-600'
+                        )}
+                      >
+                        {p.stock}
+                      </span>
+                      <div
+                        className={cn(
+                          'h-1.5 w-1.5 rounded-full',
+                          p.isCritical
+                            ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
+                            : 'bg-amber-400'
+                        )}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 
-      {/* Footer Link */}
-      <div className="p-4 border-t border-slate-50 bg-white">
-        <Link to="/admin/products">
-          <Button
-            variant="ghost"
-            className="w-full justify-between text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 hover:bg-indigo-50/50 rounded-xl px-4 group"
-          >
-            Full Inventory Audit
-            <ArrowRight
-              size={14}
-              className="transition-transform group-hover:translate-x-1"
-            />
-          </Button>
-        </Link>
-      </div>
+      {/* Footer: Action-oriented, No extra padding */}
+      <Link
+        to="/admin/products"
+        className="px-6 py-4 bg-slate-50 flex items-center justify-between group hover:bg-slate-100 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Layers
+            size={14}
+            className="text-slate-400 group-hover:text-indigo-600 transition-colors"
+          />
+          <span className="text-[10px] font-black text-slate-500 group-hover:text-slate-900 uppercase tracking-widest">
+            Inventory Manager
+          </span>
+        </div>
+        <ArrowRight
+          size={14}
+          className="text-slate-300 group-hover:text-slate-900 group-hover:translate-x-1 transition-all"
+        />
+      </Link>
     </Card>
   );
 }

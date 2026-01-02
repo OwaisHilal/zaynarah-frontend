@@ -29,7 +29,6 @@ import {
   ChevronRight,
   Clock,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export function OrderDetailsModal({ order, isOpen, onClose, onUpdateStatus }) {
   const [updating, setUpdating] = useState(false);

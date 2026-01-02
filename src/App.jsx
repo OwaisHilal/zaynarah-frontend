@@ -31,6 +31,7 @@ import SearchModal from '@/features/search/components/SearchModal';
 import { useUserStore } from './features/user/hooks/useUser';
 import AdminRoutes from './features/admin/routes/AdminRoutes';
 import useNotificationsSSE from './features/notifications/hooks/useNotificationsSSE';
+import NotificationsPage from './features/notifications/pages/NotificationsPage';
 
 function ProtectedRoute({ children }) {
   const { user } = useUserStore();
@@ -96,6 +97,14 @@ function StorefrontApp() {
                   <VerifiedRoute>
                     <OrderSuccessPage />
                   </VerifiedRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <NotificationsPage />
+                  </ProtectedRoute>
                 }
               />
             </Route>

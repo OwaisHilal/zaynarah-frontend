@@ -2,6 +2,7 @@
 import { useEffect, useRef } from 'react';
 import { useNotificationsStore } from '../store/notificationsStore';
 import NotificationItem from './NotificationItem';
+import { Link } from 'react-router-dom';
 
 export default function NotificationDropdown({ onClose, triggerRef }) {
   const ref = useRef(null);
@@ -67,6 +68,15 @@ export default function NotificationDropdown({ onClose, triggerRef }) {
             <NotificationItem notification={n} onRead={markRead} />
           </div>
         ))}
+      </div>
+      <div className="border-t px-4 py-3">
+        <Link
+          to="/notifications"
+          onClick={onClose}
+          className="block text-center text-sm font-medium text-primary hover:underline"
+        >
+          View all notifications
+        </Link>
       </div>
     </div>
   );

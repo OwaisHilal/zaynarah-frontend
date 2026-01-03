@@ -1,4 +1,4 @@
-// frontend/src/App.jsx
+/* frontend/src/App.jsx */
 import {
   BrowserRouter,
   Route,
@@ -25,6 +25,8 @@ import LoginPage from './features/user/pages/LoginPage';
 import SignupPage from './features/user/pages/SignupPage';
 import ProfilePage from './features/user/pages/ProfilePage';
 import VerifyEmailPage from './features/user/pages/VerifyEmailPage';
+
+import OrdersPage from './features/orders/pages/OrdersPage';
 
 import SearchModal from '@/features/search/components/SearchModal';
 
@@ -84,6 +86,14 @@ function StorefrontApp() {
                 element={
                   <ProtectedRoute>
                     <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/orders"
+                element={
+                  <ProtectedRoute>
+                    <OrdersPage />
                   </ProtectedRoute>
                 }
               />

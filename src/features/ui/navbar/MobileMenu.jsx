@@ -1,4 +1,4 @@
-//src/features/ui/navbar/MobileMenu.jsx
+/* frontend/src/features/ui/navbar/MobileMenu.jsx */
 import { Link, useNavigate } from 'react-router-dom';
 import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,6 @@ export default function MobileMenu() {
       </SheetTrigger>
 
       <SheetContent side="left" className="w-full max-w-sm p-6">
-        {/* Account */}
         <div className="mb-8">
           {user ? (
             <>
@@ -37,12 +36,11 @@ export default function MobileMenu() {
           )}
         </div>
 
-        {/* Shop */}
-        <div className="mt-10 space-y-3">
+        <div className="space-y-3">
           <Link to="/">Home</Link>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 mt-8">
           <h4 className="text-xs uppercase tracking-widest text-text-secondary">
             Shop
           </h4>
@@ -55,12 +53,20 @@ export default function MobileMenu() {
           <Link to="/shop?category=accessories">Accessories</Link>
         </div>
 
-        {/* Brand */}
-        <div className="mt-10 space-y-3">
-          <Link to="/the-craft">The Craft</Link>
-        </div>
+        {user && (
+          <div className="space-y-3 mt-10">
+            <h4 className="text-xs uppercase tracking-widest text-text-secondary">
+              Account
+            </h4>
 
-        {/* Actions */}
+            <Link to="/orders" className="text-lg font-medium">
+              My Orders
+            </Link>
+
+            <Link to="/profile">Profile</Link>
+          </div>
+        )}
+
         <div className="mt-10 space-y-4">
           <CartBadge fullWidth />
 

@@ -1,4 +1,4 @@
-//src/features/ui/navbar/DesktopMenu.jsx
+/* frontend/src/features/ui/navbar/DesktopMenu.jsx */
 import { Link } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -7,8 +7,11 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { useUserStore } from '@/features/user/hooks/useUser';
 
 export default function DesktopMenu() {
+  const { user } = useUserStore();
+
   return (
     <div className="hidden md:flex items-center gap-8">
       <Link
@@ -40,6 +43,15 @@ export default function DesktopMenu() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {user && (
+        <Link
+          to="/orders"
+          className="text-sm font-medium text-text-secondary hover:text-text-primary transition"
+        >
+          Orders
+        </Link>
+      )}
 
       <Link
         to="/the-craft"

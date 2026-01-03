@@ -8,11 +8,40 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
+
 export default function OrderDetailsDrawer({ open, onClose, order }) {
   if (!order) return null;
 
   const items = order.items || order.orderItems || [];
   const total = order.cartTotal?.grand || order.total || 0;
+
+  const handleDownloadInvoice = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const orderId = order._id || order.id;
+
+    const res = await fetch(`${API_BASE}/orders/${orderId}/invoice`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) return;
+
+    const html = await res.text();
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `invoice-${orderId}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
@@ -74,7 +103,11 @@ export default function OrderDetailsDrawer({ open, onClose, order }) {
           <Separator />
 
           <div className="flex gap-3">
-            <Button variant="outline" className="flex-1">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={handleDownloadInvoice}
+            >
               Download invoice
             </Button>
             <Button className="flex-1" onClick={onClose}>

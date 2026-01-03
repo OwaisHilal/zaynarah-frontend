@@ -1,11 +1,13 @@
 // src/features/user/pages/ResetPasswordPage.jsx
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { authClient } from '@/api/authClient';
+import axios from 'axios';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/features/ui/toast';
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 
 export default function ResetPasswordPage() {
   const [params] = useSearchParams();
@@ -40,7 +42,8 @@ export default function ResetPasswordPage() {
 
     try {
       setLoading(true);
-      await authClient.post('/auth/password/reset', {
+
+      await axios.post(`${API_BASE}/auth/password/reset`, {
         token,
         newPassword: password,
       });

@@ -1,11 +1,13 @@
 // src/features/user/pages/ForgotPasswordPage.jsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authClient } from '@/api/authClient';
+import axios from 'axios';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/features/ui/toast';
+
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -34,10 +36,15 @@ export default function ForgotPasswordPage() {
 
     try {
       setLoading(true);
-      await authClient.post('/auth/password/reset/request', { email: value });
+
+      await axios.post(`${API_BASE}/auth/password/forgot`, {
+        email: value,
+      });
+
       setSubmitted(true);
       showToast('If the email exists, a reset link has been sent');
     } catch {
+      // Deliberately silent — prevents email enumeration
       setSubmitted(true);
     } finally {
       setLoading(false);

@@ -1,4 +1,4 @@
-// src/features/user/components/LoginForm.jsx
+// frontend/src/features/user/components/LoginForm.jsx
 import { useState, useEffect } from 'react';
 import { useUserStore } from '../hooks/useUser';
 import { useNavigate, Link } from 'react-router-dom';
@@ -20,13 +20,11 @@ export default function LoginForm({ showHeader = true }) {
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
 
-  // Load remembered email
   useEffect(() => {
     const savedEmail = localStorage.getItem('rememberedEmail');
     if (savedEmail) setEmail(savedEmail);
   }, []);
 
-  // Redirect when user logs in
   useEffect(() => {
     if (user) navigate('/profile');
   }, [user, navigate]);
@@ -34,7 +32,7 @@ export default function LoginForm({ showHeader = true }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    await login({ email, password }); // ← now calls REAL API
+    await login({ email, password });
 
     if (rememberMe) {
       localStorage.setItem('rememberedEmail', email);
@@ -78,6 +76,16 @@ export default function LoginForm({ showHeader = true }) {
         >
           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
+      </div>
+
+      {/* Forgot password */}
+      <div className="text-right">
+        <Link
+          to="/forgot-password"
+          className="text-sm text-rose-600 hover:underline font-medium"
+        >
+          Forgot password?
+        </Link>
       </div>
 
       {/* Remember Me */}

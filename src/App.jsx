@@ -32,6 +32,8 @@ import { useUserStore } from './features/user/hooks/useUser';
 import AdminRoutes from './features/admin/routes/AdminRoutes';
 import useNotificationsSSE from './features/notifications/hooks/useNotificationsSSE';
 import NotificationsPage from './features/notifications/pages/NotificationsPage';
+import ForgotPasswordPage from './features/user/pages/ForgotPasswordPage';
+import ResetPasswordPage from './features/user/pages/ResetPasswordPage';
 
 function ProtectedRoute({ children }) {
   const { user } = useUserStore();
@@ -75,6 +77,8 @@ function StorefrontApp() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route
                 path="/profile"
                 element={

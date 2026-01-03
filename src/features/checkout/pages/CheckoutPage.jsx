@@ -12,7 +12,8 @@ import StepContent from '../components/StepContent';
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const checkout = useCheckoutStore();
-  const user = useUserStore((s) => s.user);
+
+  const { user, needsEmailVerification } = useUserStore();
 
   const [error, setError] = useState('');
 
@@ -30,11 +31,10 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!user.emailVerified) {
+    if (needsEmailVerification) {
       navigate('/verify-email?from=/checkout', { replace: true });
-      return;
     }
-  }, [user, navigate]);
+  }, [user, needsEmailVerification, navigate]);
 
   useEffect(() => {
     if (!user) return;
@@ -62,7 +62,7 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!user?.emailVerified) {
+    if (needsEmailVerification) {
       setError('Please verify your email before placing an order.');
       navigate('/verify-email?from=/checkout');
       return;

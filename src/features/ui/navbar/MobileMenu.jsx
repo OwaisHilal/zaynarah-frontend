@@ -38,6 +38,10 @@ export default function MobileMenu() {
         </div>
 
         {/* Shop */}
+        <div className="mt-10 space-y-3">
+          <Link to="/">Home</Link>
+        </div>
+
         <div className="space-y-4">
           <h4 className="text-xs uppercase tracking-widest text-text-secondary">
             Shop

@@ -1,5 +1,5 @@
 // frontend/src/features/user/pages/VerifyEmailPage.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -12,19 +12,32 @@ export default function VerifyEmailPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { resendEmailVerification, loading, fetchProfile } = useUserStore();
+
+  const {
+    user,
+    needsEmailVerification,
+    resendEmailVerification,
+    loading,
+    fetchProfile,
+  } = useUserStore();
 
   const token = params.get('token');
-  const from = params.get('from') || '/checkout';
+  const from = params.get('from') || '/';
 
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
   const [verified, setVerified] = useState(false);
   const [resent, setResent] = useState(false);
 
+  useEffect(() => {
+    if (user && !needsEmailVerification) {
+      navigate(from, { replace: true });
+    }
+  }, [user, needsEmailVerification, navigate, from]);
+
   const handleVerify = async () => {
     if (!token) {
-      setError('Invalid verification link');
+      setError('Verification link is missing or invalid');
       return;
     }
 
@@ -63,15 +76,21 @@ export default function VerifyEmailPage() {
 
         {!verified && (
           <>
+            <p className="text-sm text-gray-600 mb-6">
+              Please verify your email address to continue using your account.
+            </p>
+
             {error && <p className="text-red-600 mb-4">{error}</p>}
 
-            <Button
-              onClick={handleVerify}
-              disabled={verifying}
-              className="w-full mb-3"
-            >
-              {verifying ? 'Verifying…' : 'Verify Email'}
-            </Button>
+            {token && (
+              <Button
+                onClick={handleVerify}
+                disabled={verifying}
+                className="w-full mb-3"
+              >
+                {verifying ? 'Verifying…' : 'Verify Email'}
+              </Button>
+            )}
 
             {!resent ? (
               <Button

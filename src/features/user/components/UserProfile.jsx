@@ -1,3 +1,4 @@
+// src/features/user/components/UserProfile.jsx
 import { useState, useEffect } from 'react';
 import { useUserStore } from '../hooks/useUser';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -5,13 +6,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Link, useNavigate } from 'react-router-dom';
 
 const ROSE_GOLD = '#B76E79';
 const GOLD = '#D4AF37';
 
 export default function UserProfile() {
-  const { user, loading, fetchProfile, updateProfile, changePassword, logout } =
-    useUserStore();
+  const {
+    user,
+    loading,
+    fetchProfile,
+    updateProfile,
+    changePassword,
+    logout,
+    resendEmailVerification,
+    needsEmailVerification,
+  } = useUserStore();
+
+  const navigate = useNavigate();
 
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -20,8 +32,8 @@ export default function UserProfile() {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
+  const [resent, setResent] = useState(false);
 
-  // Sync local state when user changes
   useEffect(() => {
     setName(user?.name || '');
     setEmail(user?.email || '');
@@ -29,6 +41,7 @@ export default function UserProfile() {
 
   if (loading)
     return <p className="text-center text-gray-500">Loading profile...</p>;
+
   if (!user)
     return <p className="text-center text-gray-500">No user logged in.</p>;
 
@@ -38,27 +51,22 @@ export default function UserProfile() {
     setSuccessMsg('');
 
     try {
-      // Update basic profile fields
       if (name !== user.name || email !== user.email) {
         await updateProfile({ name, email });
       }
 
-      // Update password if provided
       if (password) {
         if (password.length < 8) {
           throw new Error('Password must be at least 8 characters');
         }
 
         await changePassword({
-          oldPassword: password, // adjust if you add separate old/new fields later
+          oldPassword: password,
           newPassword: password,
         });
 
         setPassword('');
       }
-
-      // Profile picture is UI-only for now (no backend upload yet)
-      // Keeping preview logic intact
 
       await fetchProfile();
       setSuccessMsg('Profile updated successfully!');
@@ -74,6 +82,11 @@ export default function UserProfile() {
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0];
     if (file) setProfilePic(URL.createObjectURL(file));
+  };
+
+  const handleResendVerification = async () => {
+    const ok = await resendEmailVerification();
+    if (ok) setResent(true);
   };
 
   const isModified =
@@ -94,7 +107,32 @@ export default function UserProfile() {
       </CardHeader>
 
       <CardContent className="flex flex-col gap-6">
-        {/* Profile Picture */}
+        {needsEmailVerification && (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-center">
+            <p className="text-sm font-medium text-amber-800 mb-2">
+              Your email address is not verified
+            </p>
+            <p className="text-xs text-amber-700 mb-4">
+              Please verify your email to unlock full account access.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <Button
+                size="sm"
+                onClick={handleResendVerification}
+                disabled={resent}
+                variant="outline"
+              >
+                {resent ? 'Verification Sent' : 'Resend Email'}
+              </Button>
+
+              <Button size="sm" onClick={() => navigate('/verify-email')}>
+                Verify Now
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <Avatar className="w-24 h-24 ring-2 ring-rose-600 shadow-lg">
             {profilePic ? (
@@ -109,6 +147,7 @@ export default function UserProfile() {
               accept="image/*"
               onChange={handleProfilePicChange}
               className="text-sm text-gray-500"
+              disabled={needsEmailVerification}
             />
             {profilePic && (
               <Button
@@ -116,6 +155,7 @@ export default function UserProfile() {
                 size="sm"
                 className="border-rose-600 text-rose-600 hover:bg-rose-50"
                 onClick={() => setProfilePic(null)}
+                disabled={needsEmailVerification}
               >
                 Remove
               </Button>
@@ -123,28 +163,25 @@ export default function UserProfile() {
           </div>
         </div>
 
-        {/* Name */}
         <div className="flex flex-col gap-1">
           <Label className="text-gray-700 font-medium">Name</Label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="focus:ring-rose-600 focus:border-rose-600 transition-all"
+            disabled={needsEmailVerification}
           />
         </div>
 
-        {/* Email */}
         <div className="flex flex-col gap-1">
           <Label className="text-gray-700 font-medium">Email</Label>
           <Input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="focus:ring-rose-600 focus:border-rose-600 transition-all"
+            disabled={needsEmailVerification}
           />
         </div>
 
-        {/* Password */}
         <div className="flex flex-col gap-1">
           <Label className="text-gray-700 font-medium">Change Password</Label>
           <Input
@@ -152,7 +189,7 @@ export default function UserProfile() {
             placeholder="New password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="focus:ring-rose-600 focus:border-rose-600 transition-all"
+            disabled={needsEmailVerification}
           />
           {password && password.length < 8 && (
             <p className="text-sm text-red-500">
@@ -161,13 +198,12 @@ export default function UserProfile() {
           )}
         </div>
 
-        {/* Update Button */}
         {updateError && <p className="text-red-600">{updateError}</p>}
         {successMsg && <p className="text-green-600">{successMsg}</p>}
 
         <Button
           onClick={handleProfileUpdate}
-          disabled={updateLoading || !isModified}
+          disabled={updateLoading || !isModified || needsEmailVerification}
           className="w-full rounded-full px-6 py-3 font-semibold shadow-lg"
           style={{
             background: `linear-gradient(90deg, ${ROSE_GOLD}, ${GOLD})`,
@@ -177,20 +213,18 @@ export default function UserProfile() {
           {updateLoading ? 'Updating...' : 'Update Profile'}
         </Button>
 
-        {/* Admin Panel */}
         {user.role === 'admin' && (
           <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
             <h3 className="font-semibold text-gray-900 mb-2">Admin Panel</h3>
-            <Button
-              variant="outline"
+            <Link
+              to="/admin/dashboard"
               className="border-rose-600 text-rose-600 hover:bg-rose-50"
             >
               Go to Admin Dashboard
-            </Button>
+            </Link>
           </div>
         )}
 
-        {/* Logout */}
         <Button
           variant="destructive"
           className="w-full rounded-full px-6 py-3"

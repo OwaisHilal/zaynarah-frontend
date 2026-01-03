@@ -15,6 +15,8 @@ export const useUserStore = create((set, get) => ({
   loading: false,
   error: null,
   addresses: [],
+  needsEmailVerification:
+    JSON.parse(localStorage.getItem('user'))?.emailVerified === false,
 
   login: async (credentials) => {
     set({ loading: true, error: null });
@@ -24,7 +26,12 @@ export const useUserStore = create((set, get) => ({
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      set({ user: data.user, loading: false });
+      set({
+        user: data.user,
+        needsEmailVerification: data.user.emailVerified === false,
+        loading: false,
+      });
+
       await useCartStore.getState().mergeCartOnLogin();
     } catch (err) {
       set({
@@ -42,7 +49,12 @@ export const useUserStore = create((set, get) => ({
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      set({ user: res.data.user, loading: false });
+      set({
+        user: res.data.user,
+        needsEmailVerification: true,
+        loading: false,
+      });
+
       await useCartStore.getState().mergeCartOnLogin();
     } catch (err) {
       set({
@@ -56,7 +68,11 @@ export const useUserStore = create((set, get) => ({
     disconnectNotificationsSSE();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    set({ user: null, addresses: [] });
+    set({
+      user: null,
+      addresses: [],
+      needsEmailVerification: false,
+    });
     useCartStore.getState().clearCartOnLogout();
   },
 
@@ -68,12 +84,17 @@ export const useUserStore = create((set, get) => ({
       });
 
       localStorage.setItem('user', JSON.stringify(res.data));
-      set({ user: res.data, loading: false });
+      set({
+        user: res.data,
+        needsEmailVerification: res.data.emailVerified === false,
+        loading: false,
+      });
     } catch (err) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       set({
         user: null,
+        needsEmailVerification: false,
         error: err.response?.data?.message || 'Failed to load profile',
         loading: false,
       });
@@ -90,7 +111,11 @@ export const useUserStore = create((set, get) => ({
       );
 
       localStorage.setItem('user', JSON.stringify(res.data));
-      set({ user: res.data, loading: false });
+      set({
+        user: res.data,
+        needsEmailVerification: res.data.emailVerified === false,
+        loading: false,
+      });
     } catch (err) {
       set({
         error: err.response?.data?.message || 'Profile update failed',

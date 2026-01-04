@@ -22,17 +22,26 @@ export default function LoginForm({ showHeader = true }) {
 
   useEffect(() => {
     const savedEmail = localStorage.getItem('rememberedEmail');
-    if (savedEmail) setEmail(savedEmail);
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
   }, []);
 
   useEffect(() => {
-    if (user) navigate('/profile');
+    if (user) {
+      navigate('/profile', { replace: true });
+    }
   }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    await login({ email, password });
+    await login({
+      email,
+      password,
+      rememberMe,
+    });
 
     if (rememberMe) {
       localStorage.setItem('rememberedEmail', email);
@@ -45,7 +54,6 @@ export default function LoginForm({ showHeader = true }) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {error && <p className="text-red-600 text-center">{error}</p>}
 
-      {/* Email */}
       <div className="flex flex-col gap-1">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -58,7 +66,6 @@ export default function LoginForm({ showHeader = true }) {
         />
       </div>
 
-      {/* Password */}
       <div className="flex flex-col gap-1 relative">
         <Label htmlFor="password">Password</Label>
         <Input
@@ -72,13 +79,12 @@ export default function LoginForm({ showHeader = true }) {
         <button
           type="button"
           className="absolute right-2 top-9 text-gray-500"
-          onClick={() => setShowPassword(!showPassword)}
+          onClick={() => setShowPassword((v) => !v)}
         >
           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
       </div>
 
-      {/* Forgot password */}
       <div className="text-right">
         <Link
           to="/forgot-password"
@@ -88,17 +94,15 @@ export default function LoginForm({ showHeader = true }) {
         </Link>
       </div>
 
-      {/* Remember Me */}
       <div className="flex items-center gap-2">
         <Checkbox
           id="rememberMe"
           checked={rememberMe}
-          onCheckedChange={(checked) => setRememberMe(checked)}
+          onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
         />
         <Label htmlFor="rememberMe">Remember Me</Label>
       </div>
 
-      {/* Submit */}
       <Button
         type="submit"
         disabled={loading}
@@ -111,7 +115,6 @@ export default function LoginForm({ showHeader = true }) {
         {loading ? 'Logging in...' : 'Login'}
       </Button>
 
-      {/* Social login */}
       <Button
         variant="outline"
         className="w-full flex items-center justify-center gap-2"
@@ -119,7 +122,6 @@ export default function LoginForm({ showHeader = true }) {
         <FcGoogle size={18} /> Continue with Google
       </Button>
 
-      {/* Signup Link */}
       <p className="text-sm text-center text-gray-500 mt-2">
         Don’t have an account?{' '}
         <Link

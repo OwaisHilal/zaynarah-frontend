@@ -6,20 +6,36 @@ import { disconnectNotificationsSSE } from '@/features/notifications/services/no
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 
-const getToken = () => localStorage.getItem('token');
+const getAuthStorage = () => {
+  if (localStorage.getItem('token')) return localStorage;
+  if (sessionStorage.getItem('token')) return sessionStorage;
+  return null;
+};
 
-const authHeaders = () => ({
-  Authorization: `Bearer ${getToken()}`,
-});
+const getToken = () =>
+  localStorage.getItem('token') || sessionStorage.getItem('token');
 
-const persistUser = (user) => {
-  if (user) localStorage.setItem('user', JSON.stringify(user));
-  else localStorage.removeItem('user');
+const authHeaders = () => {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const persistUser = (user, rememberMe) => {
+  const storage = rememberMe ? localStorage : sessionStorage;
+  storage.setItem('user', JSON.stringify(user));
+};
+
+const clearPersistedUser = () => {
+  localStorage.removeItem('user');
+  sessionStorage.removeItem('user');
 };
 
 const readPersistedUser = () => {
+  const storage = getAuthStorage();
+  if (!storage) return null;
+
   try {
-    return JSON.parse(localStorage.getItem('user'));
+    return JSON.parse(storage.getItem('user'));
   } catch {
     return null;
   }
@@ -30,11 +46,10 @@ export const useUserStore = create((set, get) => ({
   addresses: [],
   loading: false,
   error: '',
-
   needsEmailVerification: readPersistedUser()?.emailVerified === false,
 
-  setAuthState: (user) => {
-    persistUser(user);
+  setAuthState: (user, rememberMe) => {
+    persistUser(user, rememberMe);
     set({
       user,
       needsEmailVerification: user?.emailVerified === false,
@@ -44,7 +59,8 @@ export const useUserStore = create((set, get) => ({
   clearAuthState: () => {
     disconnectNotificationsSSE();
     localStorage.removeItem('token');
-    persistUser(null);
+    sessionStorage.removeItem('token');
+    clearPersistedUser();
     set({
       user: null,
       addresses: [],
@@ -55,16 +71,22 @@ export const useUserStore = create((set, get) => ({
     useCartStore.getState().clearCartOnLogout();
   },
 
-  login: async (credentials) => {
+  login: async ({ email, password, rememberMe }) => {
     set({ loading: true, error: '' });
     try {
       localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
+      clearPersistedUser();
 
-      const { data } = await axios.post(`${API_BASE}/auth/login`, credentials);
+      const { data } = await axios.post(`${API_BASE}/auth/login`, {
+        email,
+        password,
+      });
 
-      localStorage.setItem('token', data.token);
-      get().setAuthState(data.user);
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem('token', data.token);
 
+      get().setAuthState(data.user, rememberMe);
       await useCartStore.getState().mergeCartOnLogin();
     } catch (err) {
       set({ error: err.response?.data?.message || 'Login failed' });
@@ -77,14 +99,22 @@ export const useUserStore = create((set, get) => ({
     set({ loading: true, error: '' });
     try {
       localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
+      clearPersistedUser();
+
       const { data } = await axios.post(`${API_BASE}/auth/register`, payload);
+
       localStorage.setItem('token', data.token);
-      get().setAuthState(data.user);
+      persistUser(data.user, true);
+
+      set({
+        user: data.user,
+        needsEmailVerification: data.user?.emailVerified === false,
+      });
+
       await useCartStore.getState().mergeCartOnLogin();
     } catch (err) {
-      set({
-        error: err.response?.data?.message || 'Signup failed',
-      });
+      set({ error: err.response?.data?.message || 'Signup failed' });
     } finally {
       set({ loading: false });
     }
@@ -97,10 +127,19 @@ export const useUserStore = create((set, get) => ({
   fetchProfile: async () => {
     set({ loading: true, error: '' });
     try {
+      const storage = getAuthStorage();
+      if (!storage) throw new Error('No session');
+
       const res = await axios.get(`${API_BASE}/users/me`, {
         headers: authHeaders(),
       });
-      get().setAuthState(res.data);
+
+      storage.setItem('user', JSON.stringify(res.data));
+
+      set({
+        user: res.data,
+        needsEmailVerification: res.data?.emailVerified === false,
+      });
     } catch (err) {
       get().clearAuthState();
       set({
@@ -119,12 +158,14 @@ export const useUserStore = create((set, get) => ({
         { name },
         { headers: authHeaders() }
       );
-      get().setAuthState(res.data);
+
+      const storage = getAuthStorage();
+      if (storage) storage.setItem('user', JSON.stringify(res.data));
+
+      set({ user: res.data });
       return res.data;
     } catch (err) {
-      set({
-        error: err.response?.data?.message || 'Profile update failed',
-      });
+      set({ error: err.response?.data?.message || 'Profile update failed' });
       throw err;
     } finally {
       set({ loading: false });

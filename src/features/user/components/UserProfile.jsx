@@ -13,6 +13,9 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 const ROSE_GOLD = '#B76E79';
 const GOLD = '#D4AF37';
 
+const getToken = () =>
+  localStorage.getItem('token') || sessionStorage.getItem('token');
+
 export default function UserProfile() {
   const {
     user,
@@ -50,11 +53,14 @@ export default function UserProfile() {
   useEffect(() => {
     if (!user) return;
 
+    const token = getToken();
+    if (!token) return;
+
     const loadSessions = async () => {
       setLoadingSessions(true);
       try {
         const res = await axios.get(`${API_BASE}/auth/sessions`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
         setSessions(res.data.sessions || []);
         setCurrentSessionId(res.data.currentSessionId);
@@ -68,7 +74,7 @@ export default function UserProfile() {
     };
 
     loadSessions();
-  }, [user]);
+  }, [user, logout]);
 
   if (loading) return <p className="text-center text-gray-500">Loading…</p>;
   if (!user) return null;
@@ -77,16 +83,23 @@ export default function UserProfile() {
     oldPassword && newPassword.length >= 8 && newPassword === confirmPassword;
 
   const revokeSession = async (id) => {
+    const token = getToken();
+    if (!token) return;
+
     await axios.delete(`${API_BASE}/auth/sessions/${id}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
     setSessions((prev) => prev.filter((s) => s._id !== id));
   };
 
   const revokeAllOthers = async () => {
+    const token = getToken();
+    if (!token) return;
+
     await axios.delete(`${API_BASE}/auth/sessions`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
+
     const remaining = sessions.find((s) => s._id === currentSessionId);
     setSessions(remaining ? [remaining] : []);
   };
@@ -131,9 +144,6 @@ export default function UserProfile() {
           <div>
             <Label>Email</Label>
             <Input value={user.email} disabled />
-            <p className="text-xs text-gray-500">
-              Email is your account identifier
-            </p>
           </div>
           <Button
             disabled={name === user.name || savingProfile}
@@ -201,7 +211,7 @@ export default function UserProfile() {
                     variant="outline"
                     onClick={() => revokeSession(s._id)}
                   >
-                    Revoke
+                    Log out
                   </Button>
                 )}
               </div>

@@ -6,122 +6,125 @@ import { disconnectNotificationsSSE } from '@/features/notifications/services/no
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 
+const getToken = () => localStorage.getItem('token');
+
 const authHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem('token')}`,
+  Authorization: `Bearer ${getToken()}`,
 });
 
+const persistUser = (user) => {
+  if (user) localStorage.setItem('user', JSON.stringify(user));
+  else localStorage.removeItem('user');
+};
+
+const readPersistedUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user'));
+  } catch {
+    return null;
+  }
+};
+
 export const useUserStore = create((set, get) => ({
-  user: JSON.parse(localStorage.getItem('user')) || null,
-  loading: false,
-  error: null,
+  user: readPersistedUser(),
   addresses: [],
-  needsEmailVerification:
-    JSON.parse(localStorage.getItem('user'))?.emailVerified === false,
+  loading: false,
+  error: '',
 
-  login: async (credentials) => {
-    set({ loading: true, error: null });
-    try {
-      const { data } = await axios.post(`${API_BASE}/auth/login`, credentials);
+  needsEmailVerification: readPersistedUser()?.emailVerified === false,
 
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      set({
-        user: data.user,
-        needsEmailVerification: data.user.emailVerified === false,
-        loading: false,
-      });
-
-      await useCartStore.getState().mergeCartOnLogin();
-    } catch (err) {
-      set({
-        error: err.response?.data?.message || 'Login failed',
-        loading: false,
-      });
-    }
+  setAuthState: (user) => {
+    persistUser(user);
+    set({
+      user,
+      needsEmailVerification: user?.emailVerified === false,
+    });
   },
 
-  signup: async (data) => {
-    set({ loading: true, error: null });
-    try {
-      const res = await axios.post(`${API_BASE}/auth/register`, data);
-
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-
-      set({
-        user: res.data.user,
-        needsEmailVerification: true,
-        loading: false,
-      });
-
-      await useCartStore.getState().mergeCartOnLogin();
-    } catch (err) {
-      set({
-        error: err.response?.data?.message || 'Signup failed',
-        loading: false,
-      });
-    }
-  },
-
-  logout: () => {
+  clearAuthState: () => {
     disconnectNotificationsSSE();
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    persistUser(null);
     set({
       user: null,
       addresses: [],
       needsEmailVerification: false,
+      loading: false,
+      error: '',
     });
     useCartStore.getState().clearCartOnLogout();
   },
 
+  login: async (credentials) => {
+    set({ loading: true, error: '' });
+    try {
+      const { data } = await axios.post(`${API_BASE}/auth/login`, credentials);
+      localStorage.setItem('token', data.token);
+      get().setAuthState(data.user);
+      await useCartStore.getState().mergeCartOnLogin();
+    } catch (err) {
+      set({
+        error: err.response?.data?.message || 'Login failed',
+      });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  signup: async (payload) => {
+    set({ loading: true, error: '' });
+    try {
+      const { data } = await axios.post(`${API_BASE}/auth/register`, payload);
+      localStorage.setItem('token', data.token);
+      get().setAuthState(data.user);
+      await useCartStore.getState().mergeCartOnLogin();
+    } catch (err) {
+      set({
+        error: err.response?.data?.message || 'Signup failed',
+      });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  logout: () => {
+    get().clearAuthState();
+  },
+
   fetchProfile: async () => {
-    set({ loading: true, error: null });
+    set({ loading: true, error: '' });
     try {
       const res = await axios.get(`${API_BASE}/users/me`, {
         headers: authHeaders(),
       });
-
-      localStorage.setItem('user', JSON.stringify(res.data));
-      set({
-        user: res.data,
-        needsEmailVerification: res.data.emailVerified === false,
-        loading: false,
-      });
+      get().setAuthState(res.data);
     } catch (err) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      get().clearAuthState();
       set({
-        user: null,
-        needsEmailVerification: false,
-        error: err.response?.data?.message || 'Failed to load profile',
-        loading: false,
+        error: err.response?.data?.message || 'Session expired',
       });
+    } finally {
+      set({ loading: false });
     }
   },
 
-  updateProfile: async ({ name, email }) => {
-    set({ loading: true, error: null });
+  updateProfile: async ({ name }) => {
+    set({ loading: true, error: '' });
     try {
       const res = await axios.put(
         `${API_BASE}/users/me`,
-        { name, email },
+        { name },
         { headers: authHeaders() }
       );
-
-      localStorage.setItem('user', JSON.stringify(res.data));
-      set({
-        user: res.data,
-        needsEmailVerification: res.data.emailVerified === false,
-        loading: false,
-      });
+      get().setAuthState(res.data);
+      return res.data;
     } catch (err) {
       set({
         error: err.response?.data?.message || 'Profile update failed',
-        loading: false,
       });
       throw err;
+    } finally {
+      set({ loading: false });
     }
   },
 
@@ -140,24 +143,32 @@ export const useUserStore = create((set, get) => ({
       });
       set({ addresses: res.data });
     } catch {
-      set({ error: 'Failed to fetch addresses' });
+      set({ error: 'Failed to load addresses' });
     }
   },
 
-  addAddress: async (data) => {
-    const res = await axios.post(`${API_BASE}/users/addresses`, data, {
+  addAddress: async (payload) => {
+    const res = await axios.post(`${API_BASE}/users/addresses`, payload, {
       headers: authHeaders(),
     });
     set({ addresses: [...get().addresses, res.data] });
+    return res.data;
   },
 
-  updateAddress: async (id, data) => {
-    const res = await axios.put(`${API_BASE}/users/addresses/${id}`, data, {
+  updateAddress: async (id, payload) => {
+    const res = await axios.put(`${API_BASE}/users/addresses/${id}`, payload, {
       headers: authHeaders(),
     });
+
     set({
-      addresses: get().addresses.map((a) => (a._id === id ? res.data : a)),
+      addresses: payload.isDefault
+        ? get().addresses.map((a) =>
+            a._id === id ? res.data : { ...a, isDefault: false }
+          )
+        : get().addresses.map((a) => (a._id === id ? res.data : a)),
     });
+
+    return res.data;
   },
 
   deleteAddress: async (id) => {

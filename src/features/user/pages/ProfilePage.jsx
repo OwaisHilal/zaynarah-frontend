@@ -1,44 +1,82 @@
-/* frontend/src/features/user/pages/ProfilePage.jsx */
+// frontend/src/features/user/pages/ProfilePage.jsx
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import UserProfile from '../components/UserProfile';
 import UserAddresses from '../components/UserAddresses';
 
 export default function ProfilePage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-20 px-4 gap-8">
-      <div className="w-full max-w-4xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-2">
-            My Profile
+    <div className="min-h-screen bg-gray-50 px-4 py-16">
+      <div className="mx-auto w-full max-w-6xl">
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-3">
+            Account
           </h1>
           <p className="text-gray-600 text-lg md:text-xl">
-            Manage your account and preferences
+            Manage your personal information, security, and preferences
           </p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-2xl p-8">
-          <UserProfile />
-        </div>
+        <Tabs defaultValue="profile" className="w-full">
+          <div className="flex flex-col md:flex-row gap-8">
+            <aside className="md:w-64 shrink-0">
+              <div className="bg-white rounded-3xl shadow-xl p-4">
+                <TabsList className="flex flex-col gap-2">
+                  <TabsTrigger
+                    value="profile"
+                    className="justify-start px-4 py-2 rounded-xl"
+                  >
+                    Profile
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="addresses"
+                    className="justify-start px-4 py-2 rounded-xl"
+                  >
+                    Addresses
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="orders"
+                    className="justify-start px-4 py-2 rounded-xl"
+                  >
+                    Orders
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+            </aside>
 
-        <div className="bg-white rounded-3xl shadow-2xl p-8 mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold">My Orders</h2>
-            <Button asChild variant="outline" size="sm">
-              <Link to="/orders">View all</Link>
-            </Button>
+            <main className="flex-1">
+              <TabsContent value="profile">
+                <div className="bg-white rounded-3xl shadow-2xl p-8">
+                  <UserProfile />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="addresses">
+                <div className="bg-white rounded-3xl shadow-2xl p-8">
+                  <UserAddresses />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="orders">
+                <div className="bg-white rounded-3xl shadow-2xl p-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-semibold text-gray-900">
+                      Orders
+                    </h2>
+                    <Button asChild variant="outline" size="sm">
+                      <Link to="/orders">View all orders</Link>
+                    </Button>
+                  </div>
+                  <p className="text-gray-600">
+                    Review your past purchases, track deliveries, and download
+                    invoices from your orders page.
+                  </p>
+                </div>
+              </TabsContent>
+            </main>
           </div>
-
-          <p className="text-gray-600">
-            View your complete order history, download invoices, and track
-            deliveries from your orders page.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-3xl shadow-2xl p-8 mt-8">
-          <h2 className="text-2xl font-semibold mb-4">My Addresses</h2>
-          <UserAddresses />
-        </div>
+        </Tabs>
       </div>
     </div>
   );

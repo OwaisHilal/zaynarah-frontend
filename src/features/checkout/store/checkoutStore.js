@@ -19,6 +19,7 @@ const initialState = {
   totalSteps: 5,
 
   user: null,
+  isGuest: true,
 
   checkoutSessionId: null,
   orderId: null,
@@ -47,6 +48,7 @@ const persistState = (state) => {
     shippingMethod,
     paymentMethod,
     paymentDetails,
+    isGuest,
   } = state;
 
   localStorage.setItem(
@@ -60,6 +62,7 @@ const persistState = (state) => {
       shippingMethod,
       paymentMethod,
       paymentDetails,
+      isGuest,
     })
   );
 };
@@ -79,8 +82,15 @@ export const useCheckoutStore = create((set, get) => ({
   ...hydrateState(),
 
   setUser: (u) => {
-    if (!u || get().user?._id === u._id) return;
-    set({ user: u });
+    if (!u) return;
+    if (get().user?._id === u._id) return;
+
+    set({
+      user: u,
+      isGuest: false,
+    });
+
+    persistState(get());
   },
 
   setCurrentStep: (s) => {
@@ -141,10 +151,8 @@ export const useCheckoutStore = create((set, get) => ({
         return null;
       case 4:
         if (s.paymentMethod === 'razorpay') {
-          if (!s.paymentDetails?.name)
-            return 'Full name required for Razorpay.';
-          if (!s.paymentDetails?.phone)
-            return 'Phone number required for Razorpay.';
+          if (!s.paymentDetails?.name) return 'Full name required.';
+          if (!s.paymentDetails?.phone) return 'Phone number required.';
         }
         return null;
       default:

@@ -14,7 +14,6 @@ export default function CheckoutPage() {
   const checkout = useCheckoutStore();
 
   const { user, needsEmailVerification } = useUserStore();
-
   const [error, setError] = useState('');
 
   const steps = [
@@ -26,20 +25,7 @@ export default function CheckoutPage() {
   ];
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login?from=/checkout', { replace: true });
-      return;
-    }
-
-    if (needsEmailVerification) {
-      navigate('/verify-email?from=/checkout', { replace: true });
-    }
-  }, [user, needsEmailVerification, navigate]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    if (checkout.user?._id !== user._id) {
+    if (user && checkout.user?._id !== user._id) {
       checkout.setUser(user);
     }
   }, [user, checkout]);
@@ -62,9 +48,13 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    if (!user) {
+      navigate('/login?from=/checkout', { replace: true });
+      return;
+    }
+
     if (needsEmailVerification) {
-      setError('Please verify your email before placing an order.');
-      navigate('/verify-email?from=/checkout');
+      navigate('/verify-email?from=/checkout', { replace: true });
       return;
     }
 

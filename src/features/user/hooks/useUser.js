@@ -74,6 +74,9 @@ export const useUserStore = create((set, get) => ({
   login: async ({ email, password, rememberMe }) => {
     set({ loading: true, error: '' });
     try {
+      const cartStore = useCartStore.getState();
+      const guestCart = cartStore.cart || [];
+
       localStorage.removeItem('token');
       sessionStorage.removeItem('token');
       clearPersistedUser();
@@ -87,7 +90,8 @@ export const useUserStore = create((set, get) => ({
       storage.setItem('token', data.token);
 
       get().setAuthState(data.user, rememberMe);
-      await useCartStore.getState().mergeCartOnLogin();
+
+      await cartStore.mergeCartOnLogin(guestCart);
     } catch (err) {
       set({ error: err.response?.data?.message || 'Login failed' });
     } finally {
@@ -98,6 +102,9 @@ export const useUserStore = create((set, get) => ({
   signup: async (payload) => {
     set({ loading: true, error: '' });
     try {
+      const cartStore = useCartStore.getState();
+      const guestCart = cartStore.cart || [];
+
       localStorage.removeItem('token');
       sessionStorage.removeItem('token');
       clearPersistedUser();
@@ -112,7 +119,7 @@ export const useUserStore = create((set, get) => ({
         needsEmailVerification: data.user?.emailVerified === false,
       });
 
-      await useCartStore.getState().mergeCartOnLogin();
+      await cartStore.mergeCartOnLogin(guestCart);
     } catch (err) {
       set({ error: err.response?.data?.message || 'Signup failed' });
     } finally {

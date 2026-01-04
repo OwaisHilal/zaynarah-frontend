@@ -31,11 +31,13 @@ import OrdersPage from './features/orders/pages/OrdersPage';
 import SearchModal from '@/features/search/components/SearchModal';
 
 import { useUserStore } from './features/user/hooks/useUser';
+import { useCartStore } from './features/cart/hooks/cartStore';
 import AdminRoutes from './features/admin/routes/AdminRoutes';
 import useNotificationsSSE from './features/notifications/hooks/useNotificationsSSE';
 import NotificationsPage from './features/notifications/pages/NotificationsPage';
 import ForgotPasswordPage from './features/user/pages/ForgotPasswordPage';
 import ResetPasswordPage from './features/user/pages/ResetPasswordPage';
+import { useEffect } from 'react';
 
 function ProtectedRoute({ children }) {
   const { user } = useUserStore();
@@ -48,7 +50,12 @@ function VerifiedRoute({ children }) {
   const location = useLocation();
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to={`/login?from=${encodeURIComponent(location.pathname)}`}
+        replace
+      />
+    );
   }
 
   if (!user.emailVerified) {
@@ -64,6 +71,12 @@ function VerifiedRoute({ children }) {
 }
 
 function StorefrontApp() {
+  const hydrateCart = useCartStore((s) => s.hydrateCart);
+
+  useEffect(() => {
+    hydrateCart();
+  }, [hydrateCart]);
+
   return (
     <CartProvider>
       <ToastProvider>

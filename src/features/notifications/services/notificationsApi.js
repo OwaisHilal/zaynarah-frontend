@@ -18,14 +18,19 @@ export const fetchNotifications = async ({ page = 1, limit = 20 } = {}) => {
   return res.data;
 };
 
-export const fetchUnreadCount = async () => {
-  const headers = authHeaders();
-  if (!headers) return 0;
-  const res = await axios.get(`${API_BASE}/notifications/unread-count`, {
-    headers,
-  });
-  return res.data.count;
-};
+export async function fetchUnreadCount() {
+  try {
+    const res = await axios.get(`${API_BASE}/notifications/unread-count`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    return res.data.count;
+  } catch (err) {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token');
+    }
+    throw err;
+  }
+}
 
 export const markNotificationRead = async (id) => {
   const headers = authHeaders();

@@ -1,6 +1,7 @@
 // frontend/src/features/user/components/UserProfile.jsx
 import { useEffect, useState } from 'react';
 import { useUserStore } from '../hooks/useUser';
+import axios from 'axios';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Link, useNavigate } from 'react-router-dom';
 
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
 const ROSE_GOLD = '#B76E79';
 const GOLD = '#D4AF37';
 
@@ -26,6 +28,10 @@ export default function UserProfile() {
   const navigate = useNavigate();
 
   const [name, setName] = useState('');
+  const [sessions, setSessions] = useState([]);
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -38,59 +44,51 @@ export default function UserProfile() {
   const [resent, setResent] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setName(user.name || '');
-    }
+    if (user) setName(user.name || '');
   }, [user]);
 
-  if (loading)
-    return <p className="text-center text-gray-500">Loading profile…</p>;
+  useEffect(() => {
+    if (!user) return;
 
-  if (!user)
-    return <p className="text-center text-gray-500">No user logged in.</p>;
+    const loadSessions = async () => {
+      setLoadingSessions(true);
+      try {
+        const res = await axios.get(`${API_BASE}/auth/sessions`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        setSessions(res.data.sessions || []);
+        setCurrentSessionId(res.data.currentSessionId);
+      } catch (err) {
+        if (err.response?.status === 401) {
+          logout();
+        }
+      } finally {
+        setLoadingSessions(false);
+      }
+    };
 
-  const nameChanged = name !== user.name;
+    loadSessions();
+  }, [user]);
+
+  if (loading) return <p className="text-center text-gray-500">Loading…</p>;
+  if (!user) return null;
 
   const passwordValid =
-    oldPassword.length > 0 &&
-    newPassword.length >= 8 &&
-    newPassword === confirmPassword;
+    oldPassword && newPassword.length >= 8 && newPassword === confirmPassword;
 
-  const handleProfileSave = async () => {
-    setError('');
-    setSuccess('');
-    setSavingProfile(true);
-    try {
-      await updateProfile({ name });
-      await fetchProfile();
-      setSuccess('Profile updated');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Update failed');
-    } finally {
-      setSavingProfile(false);
-    }
+  const revokeSession = async (id) => {
+    await axios.delete(`${API_BASE}/auth/sessions/${id}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    setSessions((prev) => prev.filter((s) => s._id !== id));
   };
 
-  const handlePasswordChange = async () => {
-    setError('');
-    setSuccess('');
-    setSavingPassword(true);
-    try {
-      await changePassword({ oldPassword, newPassword });
-      setOldPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setSuccess('Password updated');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Password update failed');
-    } finally {
-      setSavingPassword(false);
-    }
-  };
-
-  const handleResendVerification = async () => {
-    const ok = await resendEmailVerification();
-    if (ok) setResent(true);
+  const revokeAllOthers = async () => {
+    await axios.delete(`${API_BASE}/auth/sessions`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    });
+    const remaining = sessions.find((s) => s._id === currentSessionId);
+    setSessions(remaining ? [remaining] : []);
   };
 
   return (
@@ -101,14 +99,16 @@ export default function UserProfile() {
             Email verification pending
           </p>
           <p className="text-xs text-amber-700 mt-1">
-            Verify your email to enable all account features
+            Verify your email to unlock full account access
           </p>
           <div className="mt-4 flex gap-3">
             <Button
               size="sm"
               variant="outline"
-              onClick={handleResendVerification}
               disabled={resent}
+              onClick={async () => {
+                if (await resendEmailVerification()) setResent(true);
+              }}
             >
               {resent ? 'Email sent' : 'Resend verification'}
             </Button>
@@ -121,35 +121,43 @@ export default function UserProfile() {
 
       <Card className="rounded-3xl shadow-xl">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900">
-            Identity
-          </CardTitle>
+          <CardTitle>Identity</CardTitle>
         </CardHeader>
-
         <CardContent className="grid gap-6">
-          <div className="grid gap-1">
+          <div>
             <Label>Name</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-
-          <div className="grid gap-1">
+          <div>
             <Label>Email</Label>
             <Input value={user.email} disabled />
             <p className="text-xs text-gray-500">
-              Email is your account identifier and cannot be changed
+              Email is your account identifier
             </p>
           </div>
-
           <Button
-            disabled={!nameChanged || savingProfile}
-            onClick={handleProfileSave}
-            className="mt-2 rounded-full px-6 py-3 font-semibold"
+            disabled={name === user.name || savingProfile}
+            onClick={async () => {
+              setError('');
+              setSuccess('');
+              setSavingProfile(true);
+              try {
+                await updateProfile({ name });
+                await fetchProfile();
+                setSuccess('Profile updated');
+              } catch {
+                setError('Failed to update profile');
+              } finally {
+                setSavingProfile(false);
+              }
+            }}
+            className="rounded-full"
             style={{
               background: `linear-gradient(90deg, ${ROSE_GOLD}, ${GOLD})`,
               color: '#fff',
             }}
           >
-            {savingProfile ? 'Saving…' : 'Save changes'}
+            Save changes
           </Button>
         </CardContent>
       </Card>
@@ -158,11 +166,62 @@ export default function UserProfile() {
 
       <Card className="rounded-3xl shadow-xl">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900">
-            Security
-          </CardTitle>
+          <CardTitle>Active sessions</CardTitle>
         </CardHeader>
+        <CardContent className="space-y-4">
+          {loadingSessions && (
+            <p className="text-sm text-gray-500">Loading sessions…</p>
+          )}
 
+          {sessions.map((s) => {
+            const isCurrent = s._id === currentSessionId;
+
+            return (
+              <div
+                key={s._id}
+                className="flex items-center justify-between rounded-xl border p-4"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {s.userAgent || 'Unknown device'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    IP {s.ip || '—'} · Last active{' '}
+                    {new Date(s.lastSeenAt).toLocaleString()}
+                  </p>
+                </div>
+
+                {isCurrent ? (
+                  <span className="text-xs font-medium text-green-600">
+                    This device
+                  </span>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => revokeSession(s._id)}
+                  >
+                    Revoke
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+
+          {sessions.length > 1 && (
+            <Button variant="destructive" onClick={revokeAllOthers}>
+              Log out all other sessions
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+
+      <Separator />
+
+      <Card className="rounded-3xl shadow-xl">
+        <CardHeader>
+          <CardTitle>Security</CardTitle>
+        </CardHeader>
         <CardContent className="grid gap-4">
           <Input
             type="password"
@@ -182,14 +241,27 @@ export default function UserProfile() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
-
           <Button
             variant="outline"
             disabled={!passwordValid || savingPassword}
-            onClick={handlePasswordChange}
-            className="rounded-full px-6 py-3"
+            onClick={async () => {
+              setError('');
+              setSuccess('');
+              setSavingPassword(true);
+              try {
+                await changePassword({ oldPassword, newPassword });
+                setOldPassword('');
+                setNewPassword('');
+                setConfirmPassword('');
+                setSuccess('Password updated');
+              } catch {
+                setError('Password update failed');
+              } finally {
+                setSavingPassword(false);
+              }
+            }}
           >
-            {savingPassword ? 'Updating…' : 'Update password'}
+            Update password
           </Button>
         </CardContent>
       </Card>
@@ -198,26 +270,15 @@ export default function UserProfile() {
       {success && <p className="text-sm text-green-600">{success}</p>}
 
       {user.role === 'admin' && (
-        <Card className="rounded-2xl border bg-gray-50">
-          <CardContent className="flex items-center justify-between px-6 py-4">
-            <div>
-              <p className="font-medium text-gray-900">Admin access</p>
-              <p className="text-sm text-gray-600">
-                Manage products, orders, and analytics
-              </p>
-            </div>
-            <Link to="/admin/dashboard" className="text-rose-600 font-medium">
-              Open dashboard
-            </Link>
+        <Card className="border bg-gray-50">
+          <CardContent className="flex justify-between p-4">
+            <span>Admin access</span>
+            <Link to="/admin/dashboard">Dashboard</Link>
           </CardContent>
         </Card>
       )}
 
-      <Button
-        variant="destructive"
-        className="rounded-full px-6 py-3"
-        onClick={logout}
-      >
+      <Button variant="destructive" onClick={logout}>
         Logout
       </Button>
     </div>

@@ -58,14 +58,16 @@ export const useUserStore = create((set, get) => ({
   login: async (credentials) => {
     set({ loading: true, error: '' });
     try {
+      localStorage.removeItem('token');
+
       const { data } = await axios.post(`${API_BASE}/auth/login`, credentials);
+
       localStorage.setItem('token', data.token);
       get().setAuthState(data.user);
+
       await useCartStore.getState().mergeCartOnLogin();
     } catch (err) {
-      set({
-        error: err.response?.data?.message || 'Login failed',
-      });
+      set({ error: err.response?.data?.message || 'Login failed' });
     } finally {
       set({ loading: false });
     }
@@ -74,6 +76,7 @@ export const useUserStore = create((set, get) => ({
   signup: async (payload) => {
     set({ loading: true, error: '' });
     try {
+      localStorage.removeItem('token');
       const { data } = await axios.post(`${API_BASE}/auth/register`, payload);
       localStorage.setItem('token', data.token);
       get().setAuthState(data.user);

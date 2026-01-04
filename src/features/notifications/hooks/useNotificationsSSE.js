@@ -1,5 +1,5 @@
 // frontend/src/features/notifications/hooks/useNotificationsSSE.js
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   connectNotificationsSSE,
@@ -10,15 +10,20 @@ import { useUserStore } from '@/features/user/hooks/useUser';
 export default function useNotificationsSSE() {
   const { user } = useUserStore();
   const queryClient = useQueryClient();
+  const connectedRef = useRef(false);
 
   useEffect(() => {
     if (!user) {
+      connectedRef.current = false;
       disconnectNotificationsSSE();
       return;
     }
 
     const token = localStorage.getItem('token');
     if (!token) return;
+
+    if (connectedRef.current) return;
+    connectedRef.current = true;
 
     connectNotificationsSSE({
       token,
@@ -31,7 +36,7 @@ export default function useNotificationsSSE() {
           if (!data) return data;
 
           const exists = data.pages.some((page) =>
-            page.some((n) => n.id === notification.id)
+            page.some((n) => n._id === notification._id)
           );
 
           if (exists) return data;
@@ -48,6 +53,9 @@ export default function useNotificationsSSE() {
       },
     });
 
-    return () => disconnectNotificationsSSE();
-  }, [user, queryClient]);
+    return () => {
+      connectedRef.current = false;
+      disconnectNotificationsSSE();
+    };
+  }, [user?.id]);
 }

@@ -2,10 +2,14 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useUserStore } from '../hooks/useUser';
 import UserProfile from '../components/UserProfile';
 import UserAddresses from '../components/UserAddresses';
 
 export default function ProfilePage() {
+  const { user } = useUserStore();
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-16">
       <div className="mx-auto w-full max-w-6xl">
@@ -45,8 +49,56 @@ export default function ProfilePage() {
               </div>
             </aside>
 
-            <main className="flex-1">
-              <TabsContent value="profile">
+            <main className="flex-1 space-y-8">
+              <TabsContent value="profile" className="space-y-8">
+                {user && (
+                  <Card className="rounded-3xl shadow-xl">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold text-gray-900">
+                        Account overview
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <p className="text-xs text-gray-500">Name</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.name}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Email</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.email}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Role</p>
+                        <p className="text-sm font-medium text-gray-900 capitalize">
+                          {user.role}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Email status</p>
+                        <p
+                          className={`text-sm font-medium ${
+                            user.emailVerified
+                              ? 'text-green-700'
+                              : 'text-amber-700'
+                          }`}
+                        >
+                          {user.emailVerified ? 'Verified' : 'Not verified'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Member since</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 <div className="bg-white rounded-3xl shadow-2xl p-8">
                   <UserProfile />
                 </div>

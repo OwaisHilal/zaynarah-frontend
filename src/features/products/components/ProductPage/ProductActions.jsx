@@ -1,4 +1,3 @@
-// src/features/products/components/ProductPage/ProductActions.jsx
 import { useState } from 'react';
 import { Heart, Share2, Check, Minus, Plus } from 'lucide-react';
 import { useCartStore } from '@/features/cart/hooks/cartStore';
@@ -19,15 +18,21 @@ export default function ProductActions({
   const [added, setAdded] = useState(false);
   const inWishlist = wishlist.includes(product.id);
 
-  const handleAddToCart = () => {
-    addToCart({
-      id: product.id,
-      title: product.title,
-      price: product.price,
-      image: mainImage || product.images?.[0],
-      qty,
-      variant: {},
-    });
+  const handleAddToCart = async () => {
+    const success = await addToCart(
+      {
+        productId: product.id,
+        title: product.title,
+        price: product.price,
+        image: mainImage || product.images?.[0],
+      },
+      qty
+    );
+
+    if (!success) {
+      showToast('Failed to add to cart', { variant: 'error' });
+      return;
+    }
 
     setAdded(true);
     showToast('Added to cart');
@@ -41,38 +46,20 @@ export default function ProductActions({
 
     setWishlist(next);
     localStorage.setItem('zaynarah_wishlist', JSON.stringify(next));
-
     showToast(inWishlist ? 'Removed from wishlist' : 'Saved to wishlist');
   };
 
   return (
     <section className="space-y-6">
-      {/* QUANTITY — tactile & weighted */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-muted-foreground">
           Quantity
         </span>
 
-        <div
-          className="
-            flex items-center
-            rounded-full
-            border border-border
-            overflow-hidden
-            bg-card
-            shadow-sm
-          "
-        >
+        <div className="flex items-center rounded-full border overflow-hidden bg-card shadow-sm">
           <button
             onClick={() => setQty(Math.max(1, qty - 1))}
-            className="
-              w-12 h-12
-              flex items-center justify-center
-              transition
-              active:scale-95
-              hover:bg-muted
-            "
-            aria-label="Decrease quantity"
+            className="w-12 h-12 flex items-center justify-center transition active:scale-95 hover:bg-muted"
           >
             <Minus size={16} />
           </button>
@@ -81,43 +68,21 @@ export default function ProductActions({
 
           <button
             onClick={() => setQty(qty + 1)}
-            className="
-              w-12 h-12
-              flex items-center justify-center
-              transition
-              hover:bg-accent hover:text-accent-foreground
-              active:scale-95
-            "
-            aria-label="Increase quantity"
+            className="w-12 h-12 flex items-center justify-center transition hover:bg-accent active:scale-95"
           >
             <Plus size={16} />
           </button>
         </div>
       </div>
 
-      {/* PRIMARY CTA — confident, grounded */}
       <button
         onClick={handleAddToCart}
         disabled={added}
         className={cn(
-          `
-            relative w-full h-14
-            rounded-full
-            text-base font-semibold
-            transition-all
-            active:scale-[0.97]
-            shadow-md
-            after:absolute after:inset-0 after:rounded-full
-            after:opacity-0 after:transition
-          `,
+          'relative w-full h-14 rounded-full text-base font-semibold transition-all active:scale-[0.97] shadow-md',
           added
             ? 'bg-primary text-primary-foreground'
-            : `
-                bg-primary text-primary-foreground
-                hover:shadow-lg
-                hover:after:opacity-100
-                after:bg-white/10
-              `
+            : 'bg-primary text-primary-foreground hover:shadow-lg'
         )}
       >
         {added ? (
@@ -130,7 +95,6 @@ export default function ProductActions({
         )}
       </button>
 
-      {/* SECONDARY ACTIONS — subtle, human */}
       <div className="flex items-center gap-6 text-sm">
         <button
           onClick={toggleWishlist}
@@ -138,10 +102,7 @@ export default function ProductActions({
         >
           <Heart
             size={16}
-            className={cn(
-              'transition',
-              inWishlist && 'fill-accent text-accent'
-            )}
+            className={cn(inWishlist && 'fill-accent text-accent')}
           />
           {inWishlist ? 'Saved' : 'Wishlist'}
         </button>
@@ -158,7 +119,6 @@ export default function ProductActions({
         </button>
       </div>
 
-      {/* TRUST MICROCOPY */}
       <div className="pt-4 border-t text-xs text-muted-foreground leading-relaxed">
         • Handcrafted by Kashmiri artisans
         <br />• Free shipping over ₹1999 · Easy 7-day returns

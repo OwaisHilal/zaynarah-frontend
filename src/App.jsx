@@ -1,4 +1,4 @@
-/* frontend/src/App.jsx */
+// frontend/src/App.jsx
 import {
   BrowserRouter,
   Route,
@@ -6,6 +6,8 @@ import {
   Navigate,
   useLocation,
 } from 'react-router-dom';
+
+import { useEffect } from 'react';
 
 import { CartProvider } from './features/cart/context/CartContext';
 import SearchProvider from '@/features/search/context/SearchProvider';
@@ -25,19 +27,20 @@ import LoginPage from './features/user/pages/LoginPage';
 import SignupPage from './features/user/pages/SignupPage';
 import ProfilePage from './features/user/pages/ProfilePage';
 import VerifyEmailPage from './features/user/pages/VerifyEmailPage';
+import ForgotPasswordPage from './features/user/pages/ForgotPasswordPage';
+import ResetPasswordPage from './features/user/pages/ResetPasswordPage';
 
 import OrdersPage from './features/orders/pages/OrdersPage';
+import NotificationsPage from './features/notifications/pages/NotificationsPage';
 
 import SearchModal from '@/features/search/components/SearchModal';
 
 import { useUserStore } from './features/user/hooks/useUser';
 import { useCartStore } from './features/cart/hooks/cartStore';
+import { useAuthStore } from './stores/user';
+
 import AdminRoutes from './features/admin/routes/AdminRoutes';
 import useNotificationsSSE from './features/notifications/hooks/useNotificationsSSE';
-import NotificationsPage from './features/notifications/pages/NotificationsPage';
-import ForgotPasswordPage from './features/user/pages/ForgotPasswordPage';
-import ResetPasswordPage from './features/user/pages/ResetPasswordPage';
-import { useEffect } from 'react';
 
 function ProtectedRoute({ children }) {
   const { user } = useUserStore();
@@ -147,7 +150,14 @@ function AdminApp() {
 }
 
 export default function App() {
+  const hydrateSession = useAuthStore((s) => s.hydrateSession);
+
+  useEffect(() => {
+    hydrateSession();
+  }, [hydrateSession]);
+
   useNotificationsSSE();
+
   return (
     <BrowserRouter>
       <Routes>

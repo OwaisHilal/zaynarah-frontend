@@ -1,8 +1,9 @@
+// src/features/ui/navbar/CartBadge.jsx
 import { ShoppingBag } from 'lucide-react';
-import { useCartStore } from '../../cart/hooks/cartStore';
+import useCartTotals from '@/features/cart/hooks/useCartTotals';
 
 export default function CartBadge({ onClick }) {
-  const cart = useCartStore((s) => s.cart);
+  const { count } = useCartTotals();
 
   return (
     <button
@@ -12,7 +13,7 @@ export default function CartBadge({ onClick }) {
     >
       <ShoppingBag size={22} />
 
-      {cart.length > 0 && (
+      {count > 0 && (
         <span
           className="
             absolute -top-2 -right-2
@@ -20,7 +21,7 @@ export default function CartBadge({ onClick }) {
             px-1.5 py-0.5 rounded-full
           "
         >
-          {cart.length}
+          {count}
         </span>
       )}
     </button>

@@ -1,4 +1,4 @@
-//src/features/cart/components/MiniCart.jsx
+// src/features/cart/components/MiniCart.jsx
 import { Link } from 'react-router-dom';
 import {
   Sheet,
@@ -9,17 +9,16 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
-import { useCartStore } from '../hooks/cartStore';
+
+import useCart from '@/features/cart/hooks/useCart';
+import useCartTotals from '@/features/cart/hooks/useCartTotals';
+
 import MiniCartItem from './MiniCartItem';
 import MiniCartEmpty from './MiniCartEmpty';
 
 export default function MiniCart({ children }) {
-  const cart = useCartStore((s) => s.cart);
-
-  const total = cart.reduce(
-    (sum, item) => sum + item.price * (item.qty || 1),
-    0
-  );
+  const { items, isEmpty } = useCart();
+  const { total } = useCartTotals();
 
   return (
     <Sheet>
@@ -29,36 +28,32 @@ export default function MiniCart({ children }) {
         side="right"
         className="w-full sm:max-w-sm p-0 flex flex-col"
       >
-        {/* ✅ Accessibility (REQUIRED by Radix) */}
         <SheetTitle className="sr-only">Shopping Cart</SheetTitle>
         <SheetDescription className="sr-only">
           Review items in your cart before checkout
         </SheetDescription>
 
-        {/* Header */}
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <ShoppingBag size={18} />
             Cart
           </h3>
           <span className="text-sm text-muted-foreground">
-            {cart.length} items
+            {items.length} items
           </span>
         </div>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {cart.length === 0 ? (
+          {isEmpty ? (
             <MiniCartEmpty />
           ) : (
-            cart.map((item) => (
+            items.map((item) => (
               <MiniCartItem key={item.productId} item={item} />
             ))
           )}
         </div>
 
-        {/* Footer */}
-        {cart.length > 0 && (
+        {!isEmpty && (
           <div className="border-t p-4 space-y-3">
             <div className="flex items-center justify-between font-medium">
               <span>Subtotal</span>

@@ -1,23 +1,25 @@
 // src/features/products/components/ProductPage/MobileStickyCTA.jsx
-
 import { ShoppingBag } from 'lucide-react';
-import { useCartStore } from '@/features/cart/hooks/cartStore';
+
+import useCartActions from '@/features/cart/hooks/useCartActions';
 import { useToast } from '@/features/ui/toast/context/useToast';
 
 export default function MobileStickyCTA({ product, mainImage }) {
-  const addToCart = useCartStore((s) => s.addToCart);
+  const { addItem } = useCartActions();
   const { showToast } = useToast();
 
   if (!product) return null;
 
   const handleAdd = () => {
-    addToCart({
-      id: product.id,
-      title: product.title,
-      price: product.price,
-      image: mainImage || product.images?.[0],
-      qty: 1,
-    });
+    addItem(
+      {
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        image: mainImage || product.images?.[0],
+      },
+      1
+    );
 
     showToast('Added to cart');
   };
@@ -35,13 +37,11 @@ export default function MobileStickyCTA({ product, mainImage }) {
       }}
     >
       <div className="flex items-center justify-between gap-4">
-        {/* Price */}
         <div>
           <p className="text-sm text-muted-foreground">Price</p>
           <p className="text-lg font-semibold">₹{product.price}</p>
         </div>
 
-        {/* CTA */}
         <button
           onClick={handleAdd}
           className="

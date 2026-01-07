@@ -1,12 +1,14 @@
+// src/features/products/components/ProductCard.jsx
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { Check, ShoppingBag } from 'lucide-react';
-import { useCartStore } from '@/features/cart/hooks/cartStore';
+
+import useCartActions from '@/features/cart/hooks/useCartActions';
 import { useToast } from '@/features/ui/toast/context/useToast';
 import { cn } from '@/lib/utils';
 
 export default function ProductCard({ product }) {
-  const addToCart = useCartStore((s) => s.addToCart);
+  const { addItem } = useCartActions();
   const { showToast } = useToast();
   const [added, setAdded] = useState(false);
 
@@ -14,13 +16,15 @@ export default function ProductCard({ product }) {
   const image = product.image || product.images?.[0];
 
   const handleAdd = () => {
-    addToCart({
-      id,
-      title: product.title,
-      price: product.price,
-      image,
-      qty: 1,
-    });
+    addItem(
+      {
+        id,
+        title: product.title,
+        price: product.price,
+        image,
+      },
+      1
+    );
 
     setAdded(true);
     showToast('Added to cart');

@@ -1,33 +1,22 @@
 // src/features/cart/pages/CartPage.jsx
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useCartStore } from '../hooks/cartStore';
+
+import useCart from '@/features/cart/hooks/useCart';
+import useCartTotals from '@/features/cart/hooks/useCartTotals';
+import useCartActions from '@/features/cart/hooks/useCartActions';
 
 const ROSE_GOLD = '#B76E79';
 const LIGHT_TEXT = '#3D1F23';
 const LIGHT_BG = '#FFF5F5';
 
 export default function CartPage() {
-  const cart = useCartStore((s) => s.cart);
-  const hydrateCart = useCartStore((s) => s.hydrateCart);
-  const removeFromCart = useCartStore((s) => s.removeFromCart);
-  const updateQty = useCartStore((s) => s.updateQty);
-  const clearCart = useCartStore((s) => s.clearCart);
-  const loading = useCartStore((s) => s.loading);
+  const { items, isEmpty } = useCart();
+  const { total } = useCartTotals();
+  const { updateQty, removeItem, clearCart } = useCartActions();
 
   const navigate = useNavigate();
   const [updatingIds, setUpdatingIds] = useState([]);
-
-  useEffect(() => {
-    hydrateCart();
-  }, [hydrateCart]);
-
-  const safeCart = Array.isArray(cart) ? cart : [];
-
-  const total = safeCart.reduce(
-    (sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 1),
-    0
-  );
 
   const handleUpdateQty = useCallback(
     async (productId, qty) => {
@@ -46,17 +35,17 @@ export default function CartPage() {
     async (productId) => {
       setUpdatingIds((prev) => [...prev, productId]);
       try {
-        await removeFromCart(productId);
+        await removeItem(productId);
       } finally {
         setUpdatingIds((prev) => prev.filter((id) => id !== productId));
       }
     },
-    [removeFromCart]
+    [removeItem]
   );
 
   const isUpdating = (id) => updatingIds.includes(id);
 
-  if (!safeCart.length) {
+  if (isEmpty) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6 py-24 bg-white">
         <div className="max-w-2xl text-center">
@@ -96,7 +85,7 @@ export default function CartPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           <section className="lg:col-span-8 space-y-6">
-            {safeCart.map((item) => (
+            {items.map((item) => (
               <article
                 key={item.productId}
                 className="flex flex-col sm:flex-row gap-6 p-6 rounded-3xl"
@@ -187,13 +176,12 @@ export default function CartPage() {
                 onClick={() => navigate('/checkout')}
                 className="w-full py-4 rounded-xl text-lg font-semibold"
                 style={{ background: ROSE_GOLD, color: LIGHT_TEXT }}
-                disabled={loading}
               >
                 Proceed to Checkout
               </button>
 
               <button
-                onClick={() => clearCart()}
+                onClick={clearCart}
                 className="w-full mt-4 py-3 rounded-xl border"
               >
                 Clear Cart

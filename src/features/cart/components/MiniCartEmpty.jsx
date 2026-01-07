@@ -1,3 +1,4 @@
+//src\features\cart\components\MiniCartEmpty.jsx
 import { ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 

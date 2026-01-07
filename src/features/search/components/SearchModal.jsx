@@ -1,3 +1,4 @@
+// src/features/search/components/SearchModal.jsx
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Loader2, Search, Plus, Check, Clock } from 'lucide-react';
@@ -11,7 +12,7 @@ import { useSearch } from '../hooks/useSearch';
 import useRecentSearches from '../hooks/useRecentSearches';
 import useSearchAnalytics from '../hooks/useSearchAnalytics';
 
-import { useCartStore } from '@/features/cart/hooks/cartStore';
+import useCartActions from '@/features/cart/hooks/useCartActions';
 
 export default function SearchModal() {
   const { open, setOpen } = useSearchContext();
@@ -23,13 +24,10 @@ export default function SearchModal() {
   const [addedId, setAddedId] = useState(null);
 
   const navigate = useNavigate();
-  const addToCart = useCartStore((s) => s.addToCart);
+  const { addItem } = useCartActions();
 
   const containerRef = useRef(null);
 
-  /* ----------------------------------------
-     Reset state on open / query change
-  ---------------------------------------- */
   useEffect(() => {
     if (!open) return;
     setActiveIndex(-1);
@@ -37,16 +35,10 @@ export default function SearchModal() {
     analytics.trackOpen();
   }, [open]);
 
-  /* ----------------------------------------
-     Track query typing (debounced inside hook)
-  ---------------------------------------- */
   useEffect(() => {
     if (query) analytics.trackQuery(query);
   }, [query]);
 
-  /* ----------------------------------------
-     Keyboard navigation (modal-scoped)
-  ---------------------------------------- */
   useEffect(() => {
     if (!open) return;
 
@@ -89,30 +81,26 @@ export default function SearchModal() {
     };
   }, [open, results, activeIndex, query]);
 
-  /* ----------------------------------------
-     Add to cart from search
-  ---------------------------------------- */
   const handleAdd = (item) => {
     analytics.trackAddToCart({
       query,
       productId: item._id,
     });
 
-    addToCart({
-      id: item._id,
-      title: item.title,
-      price: item.price,
-      image: item.image,
-      qty: 1,
-    });
+    addItem(
+      {
+        id: item._id,
+        title: item.title,
+        price: item.price,
+        image: item.image,
+      },
+      1
+    );
 
     setAddedId(item._id);
     setTimeout(() => setAddedId(null), 1200);
   };
 
-  /* ----------------------------------------
-     Zero results tracking
-  ---------------------------------------- */
   useEffect(() => {
     if (!loading && query.length > 2 && results.length === 0) {
       analytics.trackNoResults(query);
@@ -126,7 +114,6 @@ export default function SearchModal() {
         className="max-w-xl p-0 overflow-hidden focus:outline-none"
         aria-label="Search products"
       >
-        {/* Search Input */}
         <div className="flex items-center gap-2 border-b px-4 py-3">
           <Search size={18} className="opacity-60" />
           <Input
@@ -139,7 +126,6 @@ export default function SearchModal() {
           {loading && <Loader2 className="animate-spin" size={16} />}
         </div>
 
-        {/* Recent Searches */}
         {!query && recent.length > 0 && (
           <div className="px-4 py-3">
             <div className="flex items-center justify-between mb-2">
@@ -169,7 +155,6 @@ export default function SearchModal() {
           </div>
         )}
 
-        {/* Results */}
         <div className="max-h-80 overflow-y-auto">
           {results.length === 0 && query.length > 1 && !loading && (
             <p className="px-4 py-8 text-sm text-text-secondary text-center">
@@ -235,7 +220,6 @@ export default function SearchModal() {
           })}
         </div>
 
-        {/* Footer */}
         <div className="px-4 py-2 text-xs text-text-secondary border-t flex justify-between">
           <span>↑ ↓ to navigate · Enter to open</span>
           <span>Esc to close</span>

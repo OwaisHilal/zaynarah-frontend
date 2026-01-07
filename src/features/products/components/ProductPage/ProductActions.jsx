@@ -1,6 +1,8 @@
+// src/features/products/components/ProductPage/ProductActions.jsx
 import { useState } from 'react';
 import { Heart, Share2, Check, Minus, Plus } from 'lucide-react';
-import { useCartStore } from '@/features/cart/hooks/cartStore';
+
+import useCartActions from '@/features/cart/hooks/useCartActions';
 import { useToast } from '@/features/ui/toast/context/useToast';
 import { cn } from '@/lib/utils';
 
@@ -12,14 +14,14 @@ export default function ProductActions({
   wishlist,
   setWishlist,
 }) {
-  const addToCart = useCartStore((s) => s.addToCart);
+  const { addItem } = useCartActions();
   const { showToast } = useToast();
 
   const [added, setAdded] = useState(false);
   const inWishlist = wishlist.includes(product.id);
 
   const handleAddToCart = async () => {
-    const success = await addToCart(
+    const result = await addItem(
       {
         productId: product.id,
         title: product.title,
@@ -29,7 +31,7 @@ export default function ProductActions({
       qty
     );
 
-    if (!success) {
+    if (result === false) {
       showToast('Failed to add to cart', { variant: 'error' });
       return;
     }

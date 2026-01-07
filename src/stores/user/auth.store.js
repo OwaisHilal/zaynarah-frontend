@@ -2,7 +2,6 @@
 import { create } from 'zustand';
 import { loginUser, signupUser } from '@/features/user/services/userApi';
 import { disconnectNotificationsSSE } from '@/features/notifications/services/notificationsSse';
-import { useCartStore } from '@/features/cart/hooks/cartStore';
 import { useUserDomainStore } from './user.store';
 
 const getAuthStorage = () => {
@@ -36,8 +35,6 @@ export const useAuthStore = create((set) => ({
 
   login: async ({ email, password, rememberMe }) => {
     set({ loading: true, error: '' });
-    const cartStore = useCartStore.getState();
-    const guestCart = cartStore.cart || [];
 
     try {
       clearAuthStorage();
@@ -48,7 +45,6 @@ export const useAuthStore = create((set) => ({
       storage.setItem('user', JSON.stringify(data.user));
 
       useUserDomainStore.getState().setUser(data.user);
-      await cartStore.mergeCartOnLogin(guestCart);
     } catch (err) {
       set({ error: err?.response?.data?.message || 'Login failed' });
     } finally {
@@ -58,8 +54,6 @@ export const useAuthStore = create((set) => ({
 
   signup: async (payload) => {
     set({ loading: true, error: '' });
-    const cartStore = useCartStore.getState();
-    const guestCart = cartStore.cart || [];
 
     try {
       clearAuthStorage();
@@ -69,7 +63,6 @@ export const useAuthStore = create((set) => ({
       localStorage.setItem('user', JSON.stringify(data.user));
 
       useUserDomainStore.getState().setUser(data.user);
-      await cartStore.mergeCartOnLogin(guestCart);
     } catch (err) {
       set({ error: err?.response?.data?.message || 'Signup failed' });
     } finally {
@@ -81,7 +74,6 @@ export const useAuthStore = create((set) => ({
     disconnectNotificationsSSE();
     clearAuthStorage();
     useUserDomainStore.getState().resetUser();
-    useCartStore.getState().clearCartOnLogout();
     set({ loading: false, error: '' });
   },
 }));

@@ -1,10 +1,11 @@
+// src/features/checkout/components/OrderSummary.jsx
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { useCart } from '../../cart/context/useCart';
+import { useCartDomainStore } from '@/stores/cart';
 import { useCheckoutStore } from '../store/checkoutStore';
 import { formatCurrency } from '../utils/checkoutHelpers';
 
 export default function OrderSummary() {
-  const { cart = [] } = useCart() || {};
+  const cart = useCartDomainStore((s) => s.items);
   const { shippingMethod } = useCheckoutStore();
 
   const subtotal = cart.reduce(
@@ -20,6 +21,7 @@ export default function OrderSummary() {
       <CardHeader>
         <h2 className="text-xl font-semibold text-rose-600">Order Summary</h2>
       </CardHeader>
+
       <CardContent className="space-y-3">
         {cart.map((i) => (
           <div key={i.productId} className="flex justify-between">

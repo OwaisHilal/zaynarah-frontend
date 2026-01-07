@@ -4,13 +4,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '../utils/checkoutHelpers';
-import { useCart } from '@/features/cart/context/useCart';
 import { getOrderAPI } from '../services/useCheckoutApi';
+import { useCartDomainStore } from '@/stores/cart';
 
 export default function OrderSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { clearCartOnLogout } = useCart();
+
+  const clearAfterOrder = useCartDomainStore((s) => s.clearAfterOrder);
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,7 @@ export default function OrderSuccess() {
 
         localStorage.setItem('lastOrderId', JSON.stringify(orderId));
         setOrder(freshOrder);
-        clearCartOnLogout();
+        clearAfterOrder();
       } catch {
         setLoading(false);
       } finally {
@@ -45,7 +46,7 @@ export default function OrderSuccess() {
     };
 
     loadOrder();
-  }, [location.state, clearCartOnLogout]);
+  }, [location.state, clearAfterOrder]);
 
   if (loading) {
     return (

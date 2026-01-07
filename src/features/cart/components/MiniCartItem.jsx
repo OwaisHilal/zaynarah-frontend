@@ -1,8 +1,9 @@
+// src/features/cart/components/MiniCartItem.jsx
 import { X } from 'lucide-react';
-import { useCartStore } from '../hooks/cartStore';
+import useCartActions from '@/features/cart/hooks/useCartActions';
 
 export default function MiniCartItem({ item }) {
-  const removeFromCart = useCartStore((s) => s.removeFromCart);
+  const { removeItem } = useCartActions();
 
   return (
     <div className="flex gap-3 items-start">
@@ -21,7 +22,7 @@ export default function MiniCartItem({ item }) {
       </div>
 
       <button
-        onClick={() => removeFromCart(item.productId)}
+        onClick={() => removeItem(item.productId)}
         className="text-muted-foreground hover:text-destructive transition"
         aria-label="Remove item"
       >

@@ -4,15 +4,10 @@ let reconnectTimeout = null;
 let activeToken = null;
 
 export function connectNotificationsSSE({ token, onMessage }) {
-  // Hard stop if token is missing
   if (!token) return;
-
-  // If same token already connected, do nothing
   if (eventSource && activeToken === token) return;
 
-  // Cleanup any existing connection
   disconnectNotificationsSSE();
-
   activeToken = token;
 
   const baseUrl = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
@@ -26,19 +21,27 @@ export function connectNotificationsSSE({ token, onMessage }) {
     console.log('[SSE] Connected');
   };
 
-  eventSource.onmessage = (event) => {
+  eventSource.addEventListener('notification:new', (event) => {
     try {
-      const data = JSON.parse(event.data);
+      const raw = JSON.parse(event.data);
 
-      if (data?.status === 'ok') return;
+      const normalized = {
+        ...raw,
+        _id: raw._id || raw.id,
+      };
 
       if (onMessage && activeToken === token) {
-        onMessage(data);
+        onMessage({
+          type: 'notification:new',
+          payload: normalized,
+        });
       }
     } catch (err) {
       console.error('[SSE] Parse error:', err);
     }
-  };
+  });
+
+  eventSource.addEventListener('connected', () => {});
 
   eventSource.onerror = () => {
     if (eventSource) {
@@ -46,9 +49,10 @@ export function connectNotificationsSSE({ token, onMessage }) {
       eventSource = null;
     }
 
-    // ❗️Critical guard: do NOT reconnect if token changed or removed
     if (activeToken !== token) return;
-    if (!localStorage.getItem('token')) return;
+
+    if (!localStorage.getItem('token') && !sessionStorage.getItem('token'))
+      return;
 
     reconnectTimeout = setTimeout(() => {
       reconnectTimeout = null;

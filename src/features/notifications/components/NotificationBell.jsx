@@ -1,15 +1,17 @@
-// frontend/src/features/notifications/components/NotificationBell.jsx
+// src/features/notifications/components/NotificationBell.jsx
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { useUserStore } from '../../user/hooks/useUser';
 import { useUnreadCount } from '../hooks/useUnreadCount';
 import NotificationDropdown from './NotificationDropdown';
+import { useNotificationsUIStore } from '@/stores/notifications';
 
 export default function NotificationBell() {
   const { user } = useUserStore();
-  const { data: unreadCount = 0 } = useUnreadCount();
-  const [open, setOpen] = useState(false);
+  const unreadCount = useUnreadCount();
+  const { dropdownOpen, openDropdown, closeDropdown } =
+    useNotificationsUIStore();
   const buttonRef = useRef(null);
 
   if (!user) return null;
@@ -24,7 +26,7 @@ export default function NotificationBell() {
         className="relative"
         onClick={(e) => {
           e.stopPropagation();
-          setOpen((prev) => !prev);
+          dropdownOpen ? closeDropdown() : openDropdown();
         }}
       >
         <Bell size={18} />
@@ -35,11 +37,8 @@ export default function NotificationBell() {
         )}
       </Button>
 
-      {open && (
-        <NotificationDropdown
-          triggerRef={buttonRef}
-          onClose={() => setOpen(false)}
-        />
+      {dropdownOpen && (
+        <NotificationDropdown triggerRef={buttonRef} onClose={closeDropdown} />
       )}
     </div>
   );

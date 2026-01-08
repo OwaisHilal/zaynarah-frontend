@@ -71,7 +71,7 @@ export default function ProductPage() {
   }
 
   return (
-    <main className="bg-background">
+    <div className="bg-background">
       {/* MAIN CONTENT */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* HERO GRID */}
@@ -138,6 +138,6 @@ export default function ProductPage() {
 
       {/* MODALS */}
       {showSizeGuide && <SizeGuideModal setShowSizeGuide={setShowSizeGuide} />}
-    </main>
+    </div>
   );
 }

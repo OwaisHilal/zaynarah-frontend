@@ -1,5 +1,4 @@
-// frontend/src/features/notifications/pages/NotificationsPage.jsx
-import { useEffect } from 'react';
+// src/features/notifications/pages/NotificationsPage.jsx
 import { useUserStore } from '../../user/hooks/useUser';
 import { useNotifications } from '../hooks/useNotifications';
 import { useMarkAsRead } from '../hooks/useMarkAsRead';
@@ -9,11 +8,8 @@ import { Button } from '@/components/ui/button';
 
 export default function NotificationsPage() {
   const { user } = useUserStore();
-  const { data, fetchNextPage, hasNextPage } = useNotifications();
+  const { items, fetchNextPage, hasMore } = useNotifications();
   const { markOne, markAll } = useMarkAsRead();
-
-  const items = data?.pages?.flat() ?? [];
-  const hasNotifications = items.length > 0;
 
   if (!user) {
     return (
@@ -30,8 +26,7 @@ export default function NotificationsPage() {
     <section className="max-w-3xl mx-auto px-6 py-10">
       <header className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
-
-        {hasNotifications && (
+        {items.length > 0 && (
           <Button variant="outline" size="sm" onClick={() => markAll.mutate()}>
             Mark all as read
           </Button>
@@ -39,10 +34,10 @@ export default function NotificationsPage() {
       </header>
 
       <div className="space-y-3">
-        {hasNotifications ? (
+        {items.length > 0 ? (
           items.map((n) => (
             <NotificationItem
-              key={n.id}
+              key={n._id}
               notification={n}
               onRead={(id) => markOne.mutate(id)}
             />
@@ -55,9 +50,9 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      {hasNextPage && (
+      {hasMore && (
         <div className="mt-8 text-center">
-          <Button variant="ghost" onClick={() => fetchNextPage()}>
+          <Button variant="ghost" onClick={fetchNextPage}>
             Load more
           </Button>
         </div>

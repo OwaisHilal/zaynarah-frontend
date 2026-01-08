@@ -95,7 +95,7 @@ export default function Payments() {
           </Card>
         </aside>
 
-        <main className="lg:col-span-9 space-y-6">
+        <div className="lg:col-span-9 space-y-6">
           <Card
             className={cn(
               'border-none ring-1 ring-slate-200 rounded-[32px] bg-white shadow-sm overflow-hidden transition-opacity duration-300',
@@ -122,7 +122,7 @@ export default function Payments() {
               </>
             )}
           </Card>
-        </main>
+        </div>
       </div>
     </div>
   );

@@ -49,7 +49,7 @@ export default function ProfilePage() {
               </div>
             </aside>
 
-            <main className="flex-1 space-y-8">
+            <div className="flex-1 space-y-8">
               <TabsContent value="profile" className="space-y-8">
                 {user && (
                   <Card className="rounded-3xl shadow-xl">
@@ -126,7 +126,7 @@ export default function ProfilePage() {
                   </p>
                 </div>
               </TabsContent>
-            </main>
+            </div>
           </div>
         </Tabs>
       </div>

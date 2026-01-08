@@ -74,7 +74,7 @@ export default function ShopPage() {
   }
 
   return (
-    <main className="bg-bg-primary pb-24">
+    <div className="bg-bg-primary pb-24">
       {/* HERO */}
       <section
         className="relative h-[42vh] flex items-center"
@@ -190,6 +190,6 @@ export default function ShopPage() {
           Next <ArrowRight size={14} />
         </button>
       </section>
-    </main>
+    </div>
   );
 }

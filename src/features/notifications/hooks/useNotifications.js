@@ -1,12 +1,41 @@
-// frontend/src/features/notifications/hooks/useNotifications.js
-import { useInfiniteQuery } from '@tanstack/react-query';
+// src/features/notifications/hooks/useNotifications.js
+import { useEffect } from 'react';
 import { fetchNotifications } from '../services/notificationsApi';
+import { useNotificationsDomainStore } from '@/stores/notifications';
 
 export function useNotifications() {
-  return useInfiniteQuery({
-    queryKey: ['notifications'],
-    queryFn: ({ pageParam = 1 }) => fetchNotifications({ page: pageParam }),
-    getNextPageParam: (lastPage, allPages) =>
-      lastPage.length === 20 ? allPages.length + 1 : undefined,
-  });
+  const { items, page, hasMore, hydrated, hydrate, append } =
+    useNotificationsDomainStore();
+
+  useEffect(() => {
+    if (hydrated) return;
+
+    const loadAll = async () => {
+      let currentPage = 1;
+      let all = [];
+
+      while (true) {
+        const res = await fetchNotifications({ page: currentPage });
+        all = [...all, ...res];
+        if (res.length < 20) break;
+        currentPage++;
+      }
+
+      hydrate(all);
+    };
+
+    loadAll();
+  }, [hydrated, hydrate]);
+
+  const fetchNextPage = async () => {
+    if (!hasMore) return;
+    const res = await fetchNotifications({ page });
+    append(res);
+  };
+
+  return {
+    items,
+    hasMore,
+    fetchNextPage,
+  };
 }

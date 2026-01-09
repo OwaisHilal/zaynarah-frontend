@@ -1,9 +1,8 @@
 // src/features/checkout/pages/CheckoutPage.jsx
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useUserStore } from '../../user/hooks/useUser';
-import { useCheckoutStore } from '../store/checkoutStore';
+import { useUserDomainStore } from '@/stores/user';
+import { useCheckoutDomainStore, useCheckoutUIStore } from '@/stores/checkout';
 
 import CheckoutNavigation from '../components/CheckoutNavigation';
 import CheckoutProgress from '../components/CheckoutProgress';
@@ -11,10 +10,22 @@ import StepContent from '../components/StepContent';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const checkout = useCheckoutStore();
 
-  const { user, needsEmailVerification } = useUserStore();
-  const [error, setError] = useState('');
+  const { isAuthenticated, needsEmailVerification } = useUserDomainStore();
+
+  const { ensureSession, finalizePricing, startPayment } =
+    useCheckoutDomainStore();
+
+  const {
+    currentStep,
+    totalSteps,
+    loading,
+    error,
+    next,
+    back,
+    setLoading,
+    setError,
+  } = useCheckoutUIStore();
 
   const steps = [
     'Shipping Address',
@@ -24,31 +35,38 @@ export default function CheckoutPage() {
     'Review Order',
   ];
 
-  useEffect(() => {
-    if (user && checkout.user?._id !== user._id) {
-      checkout.setUser(user);
-    }
-  }, [user, checkout]);
-
   const handleNext = async () => {
-    const msg = checkout.validateStep(checkout.currentStep);
-    if (msg) {
-      setError(msg);
-      return;
-    }
+    try {
+      setLoading(true);
 
-    setError('');
-    const res = await checkout.nextStep();
-    if (res?.error) setError(res.error);
+      if (currentStep === 1) {
+        await ensureSession();
+      }
+
+      if (currentStep === 2) {
+        const { shippingMethod } = useCheckoutDomainStore.getState();
+
+        if (!shippingMethod) {
+          throw new Error('Please select a shipping method');
+        }
+
+        await finalizePricing();
+      }
+
+      next();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBack = () => {
-    setError('');
-    checkout.prevStep();
+    back();
   };
 
   const handlePlaceOrder = async () => {
-    if (!user) {
+    if (!isAuthenticated) {
       navigate('/login?from=/checkout', { replace: true });
       return;
     }
@@ -59,23 +77,25 @@ export default function CheckoutPage() {
     }
 
     try {
-      setError('');
-      await checkout.startPaymentFlow();
+      setLoading(true);
+      await startPayment();
       navigate('/checkout/success');
-    } catch (err) {
-      setError(err.message || 'Order failed.');
+    } catch (e) {
+      setError(e.message || 'Order failed.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <CheckoutProgress currentStep={checkout.currentStep} steps={steps} />
+      <CheckoutProgress currentStep={currentStep} steps={steps} />
 
-      <StepContent currentStep={checkout.currentStep} error={error} />
+      <StepContent currentStep={currentStep} error={error} />
 
       <CheckoutNavigation
-        currentStep={checkout.currentStep}
-        totalSteps={steps.length}
+        currentStep={currentStep}
+        totalSteps={totalSteps}
         onNext={handleNext}
         onBack={handleBack}
         onPlaceOrder={handlePlaceOrder}

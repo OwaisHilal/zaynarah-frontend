@@ -3,6 +3,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { useCheckoutDomainStore } from '@/stores/checkout';
 
 const paymentMethods = [
   {
@@ -17,10 +18,10 @@ const paymentMethods = [
   },
 ];
 
-export default function PaymentOptions({
-  selectedPayment,
-  setSelectedPayment,
-}) {
+export default function PaymentOptions() {
+  const paymentMethod = useCheckoutDomainStore((s) => s.paymentMethod);
+  const setPaymentMethod = useCheckoutDomainStore((s) => s.setPaymentMethod);
+
   return (
     <div className="flex flex-col gap-3">
       <h3 className="font-semibold text-gray-900 text-lg">
@@ -28,12 +29,12 @@ export default function PaymentOptions({
       </h3>
 
       <RadioGroup
-        value={selectedPayment}
-        onValueChange={setSelectedPayment}
+        value={paymentMethod}
+        onValueChange={setPaymentMethod}
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
         {paymentMethods.map((method) => {
-          const isSelected = selectedPayment === method.id;
+          const isSelected = paymentMethod === method.id;
 
           return (
             <motion.label
@@ -47,11 +48,9 @@ export default function PaymentOptions({
                   : 'border-gray-300 hover:shadow'
               )}
             >
-              {/* Accessible radio item */}
               <RadioGroupItem value={method.id} className="sr-only" />
 
               <div className="flex items-center gap-3">
-                {/* Custom circle indicator */}
                 <div
                   className={cn(
                     'w-5 h-5 rounded-full flex items-center justify-center border transition-colors',

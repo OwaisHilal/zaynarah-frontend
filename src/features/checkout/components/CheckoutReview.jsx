@@ -1,3 +1,4 @@
+//src\features\checkout\components\CheckoutReview.jsx
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useCheckoutStore } from '../store/checkoutStore';
 import { formatCurrency } from '../utils/checkoutHelpers';

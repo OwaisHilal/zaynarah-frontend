@@ -1,7 +1,11 @@
+// src/App.jsx
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useEffect } from 'react';
+
 import { useAuthStore } from '@/stores/user';
 import { useCartDomainStore } from '@/stores/cart';
+import { useCheckoutDomainStore, useCheckoutUIStore } from '@/stores/checkout';
+
 import useNotificationsSSE from '@/features/notifications/hooks/useNotificationsSSE';
 
 import AdminRoutes from './routes/admin/AdminRoutes';
@@ -16,6 +20,10 @@ export default function App() {
   const mergeOnLogin = useCartDomainStore((s) => s.mergeOnLogin);
   const resetToGuest = useCartDomainStore((s) => s.resetToGuest);
 
+  const hydrateCheckout = useCheckoutDomainStore((s) => s.hydrate);
+  const resetCheckoutDomain = useCheckoutDomainStore((s) => s.reset);
+  const resetCheckoutUI = useCheckoutUIStore((s) => s.reset);
+
   useEffect(() => {
     hydrateSession();
   }, [hydrateSession]);
@@ -23,13 +31,27 @@ export default function App() {
   useEffect(() => {
     if (!authHydrated) return;
     hydrateCart();
-  }, [authHydrated, hydrateCart]);
+    hydrateCheckout();
+  }, [authHydrated, hydrateCart, hydrateCheckout]);
 
   useEffect(() => {
     if (!authHydrated) return;
-    if (isAuthenticated) mergeOnLogin();
-    else resetToGuest();
-  }, [authHydrated, isAuthenticated, mergeOnLogin, resetToGuest]);
+
+    if (isAuthenticated) {
+      mergeOnLogin();
+    } else {
+      resetToGuest();
+      resetCheckoutDomain();
+      resetCheckoutUI();
+    }
+  }, [
+    authHydrated,
+    isAuthenticated,
+    mergeOnLogin,
+    resetToGuest,
+    resetCheckoutDomain,
+    resetCheckoutUI,
+  ]);
 
   useNotificationsSSE();
 

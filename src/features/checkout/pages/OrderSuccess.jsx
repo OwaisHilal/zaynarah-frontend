@@ -3,15 +3,19 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+
 import { formatCurrency } from '../utils/checkoutHelpers';
 import { getOrderAPI } from '../services/useCheckoutApi';
 import { useCartDomainStore } from '@/stores/cart';
+import { useCheckoutDomainStore, useCheckoutUIStore } from '@/stores/checkout';
 
 export default function OrderSuccess() {
   const location = useLocation();
   const navigate = useNavigate();
 
   const clearAfterOrder = useCartDomainStore((s) => s.clearAfterOrder);
+  const resetCheckoutDomain = useCheckoutDomainStore((s) => s.reset);
+  const resetCheckoutUI = useCheckoutUIStore((s) => s.reset);
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +41,10 @@ export default function OrderSuccess() {
 
         localStorage.setItem('lastOrderId', JSON.stringify(orderId));
         setOrder(freshOrder);
+
         clearAfterOrder();
+        resetCheckoutDomain();
+        resetCheckoutUI();
       } catch {
         setLoading(false);
       } finally {
@@ -46,7 +53,7 @@ export default function OrderSuccess() {
     };
 
     loadOrder();
-  }, [location.state, clearAfterOrder]);
+  }, [location.state, clearAfterOrder, resetCheckoutDomain, resetCheckoutUI]);
 
   if (loading) {
     return (

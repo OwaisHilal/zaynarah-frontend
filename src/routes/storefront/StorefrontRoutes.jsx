@@ -1,3 +1,4 @@
+// src/routes/storefront/StorefrontRoutes.jsx
 import { Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import SearchProvider from '@/features/search/context/SearchProvider';
 import { ToastProvider } from '@/features/ui/toast';
@@ -18,19 +19,25 @@ import ResetPasswordPage from '@/features/user/pages/ResetPasswordPage';
 import OrdersPage from '@/features/orders/pages/OrdersPage';
 import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 import SearchModal from '@/features/search/components/SearchModal';
-import { useUserStore } from '@/features/user/hooks/useUser';
+import { useAuthStore } from '@/stores/user';
+import { useUserDomainStore } from '@/stores/user';
 
-function ProtectedRoute({ children }) {
-  const { user } = useUserStore();
-  if (!user) return <Navigate to="/login" replace />;
-  return children;
+function AuthBlockingShell() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center text-sm text-muted-foreground">
+      Loading…
+    </div>
+  );
 }
 
-function VerifiedRoute({ children }) {
-  const { user } = useUserStore();
+function ProtectedRoute({ children }) {
+  const hydrated = useAuthStore((s) => s.hydrated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
   const location = useLocation();
 
-  if (!user) {
+  if (!hydrated) return <AuthBlockingShell />;
+
+  if (!isAuthenticated) {
     return (
       <Navigate
         to={`/login?from=${encodeURIComponent(location.pathname)}`}
@@ -39,7 +46,29 @@ function VerifiedRoute({ children }) {
     );
   }
 
-  if (!user.emailVerified) {
+  return children;
+}
+
+function VerifiedRoute({ children }) {
+  const hydrated = useAuthStore((s) => s.hydrated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
+  const needsEmailVerification = useUserDomainStore((s) =>
+    s.needsEmailVerification()
+  );
+  const location = useLocation();
+
+  if (!hydrated) return <AuthBlockingShell />;
+
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to={`/login?from=${encodeURIComponent(location.pathname)}`}
+        replace
+      />
+    );
+  }
+
+  if (needsEmailVerification) {
     return (
       <Navigate
         to={`/verify-email?from=${encodeURIComponent(location.pathname)}`}
@@ -88,6 +117,15 @@ export default function StorefrontRoutes() {
             />
 
             <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/checkout"
               element={
                 <VerifiedRoute>
@@ -102,15 +140,6 @@ export default function StorefrontRoutes() {
                 <VerifiedRoute>
                   <OrderSuccessPage />
                 </VerifiedRoute>
-              }
-            />
-
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <NotificationsPage />
-                </ProtectedRoute>
               }
             />
           </Route>

@@ -1,7 +1,6 @@
-//src/features/checkout/components/CheckoutNavigation.jsx
-
+// src/features/checkout/components/CheckoutNavigation.jsx
 import { Button } from '@/components/ui/button';
-import { useCheckoutStore } from '../store/checkoutStore';
+import { useCheckoutUIStore } from '@/stores/checkout';
 
 export default function CheckoutNavigation({
   currentStep,
@@ -10,8 +9,7 @@ export default function CheckoutNavigation({
   onBack,
   onPlaceOrder,
 }) {
-  const loading = useCheckoutStore((s) => s.loading);
-  const isNextDisabled = useCheckoutStore((s) => s.isNextDisabled);
+  const loading = useCheckoutUIStore((s) => s.loading);
 
   return (
     <div className="mt-6 flex justify-between gap-4">
@@ -26,7 +24,7 @@ export default function CheckoutNavigation({
       {currentStep < totalSteps ? (
         <Button
           className="bg-rose-600 hover:bg-rose-700 text-white"
-          disabled={loading || isNextDisabled}
+          disabled={loading}
           onClick={onNext}
         >
           {loading ? 'Processing…' : 'Next'}

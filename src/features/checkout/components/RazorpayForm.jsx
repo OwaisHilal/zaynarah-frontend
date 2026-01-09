@@ -1,9 +1,11 @@
+// src/features/checkout/components/RazorpayForm.jsx
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useCheckoutStore } from '../store/checkoutStore';
+import { useCheckoutDomainStore } from '@/stores/checkout';
 
 export default function RazorpayForm() {
-  const { paymentDetails, setPaymentDetails } = useCheckoutStore();
+  const paymentDetails = useCheckoutDomainStore((s) => s.paymentDetails);
+  const setPaymentDetails = useCheckoutDomainStore((s) => s.setPaymentDetails);
 
   return (
     <div className="space-y-3">
@@ -12,7 +14,10 @@ export default function RazorpayForm() {
         <Input
           value={paymentDetails?.name || ''}
           onChange={(e) =>
-            setPaymentDetails({ ...paymentDetails, name: e.target.value })
+            setPaymentDetails({
+              ...paymentDetails,
+              name: e.target.value,
+            })
           }
         />
       </div>
@@ -22,7 +27,10 @@ export default function RazorpayForm() {
         <Input
           value={paymentDetails?.phone || ''}
           onChange={(e) =>
-            setPaymentDetails({ ...paymentDetails, phone: e.target.value })
+            setPaymentDetails({
+              ...paymentDetails,
+              phone: e.target.value,
+            })
           }
         />
       </div>

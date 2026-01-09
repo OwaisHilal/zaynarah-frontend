@@ -1,3 +1,4 @@
+// src/features/checkout/components/StepContent.jsx
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -8,7 +9,8 @@ import ShippingMethodForm from './ShippingMethodForm';
 import PaymentOptions from './PaymentOptions';
 import RazorpayForm from './RazorpayForm';
 import OrderSummary from './OrderSummary';
-import { useCheckoutStore } from '../store/checkoutStore';
+
+import { useCheckoutDomainStore } from '@/stores/checkout';
 
 const motionProps = {
   initial: { x: 40, opacity: 0 },
@@ -20,29 +22,15 @@ const motionProps = {
 export default function StepContent({ currentStep = 1, error }) {
   const {
     shippingAddress,
-    shippingMethod,
-    shippingMethods,
-    shippingLoading,
-    shippingError,
-    paymentMethod,
-    paymentDetails,
     billingAddress,
-    setShippingMethod,
-    setBillingAddress,
-    setPaymentMethod,
-    setPaymentDetails,
+    paymentMethod,
     loadShippingMethods,
-  } = useCheckoutStore();
+  } = useCheckoutDomainStore();
 
   useEffect(() => {
     if (!shippingAddress) return;
-
-    loadShippingMethods().then((methods) => {
-      if (methods?.length === 1 && !shippingMethod) {
-        setShippingMethod(methods[0]);
-      }
-    });
-  }, [shippingAddress]);
+    loadShippingMethods();
+  }, [shippingAddress, loadShippingMethods]);
 
   return (
     <div className="mt-6 relative min-h-[320px]">
@@ -65,52 +53,28 @@ export default function StepContent({ currentStep = 1, error }) {
 
         {currentStep === 2 && (
           <motion.div key="s2" {...motionProps}>
-            <ShippingMethodForm
-              shippingMethod={shippingMethod}
-              setShippingMethod={setShippingMethod}
-              shippingMethods={shippingMethods}
-              loading={shippingLoading}
-            />
-            {(error || shippingError) && (
-              <p className="text-sm text-red-500 mt-2">
-                {error || shippingError}
-              </p>
-            )}
+            <ShippingMethodForm />
+            {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
           </motion.div>
         )}
 
         {currentStep === 3 && (
           <motion.div key="s3" {...motionProps}>
-            <PaymentOptions
-              selectedPayment={paymentMethod}
-              setSelectedPayment={(m) => {
-                setPaymentMethod(m);
-                setPaymentDetails(null);
-              }}
-            />
+            <PaymentOptions />
           </motion.div>
         )}
 
         {currentStep === 4 && (
           <motion.div key="s4" {...motionProps}>
             {paymentMethod === 'razorpay' ? (
-              <RazorpayForm
-                paymentDetails={paymentDetails}
-                setPaymentDetails={setPaymentDetails}
-              />
+              <RazorpayForm />
             ) : (
               <p className="text-sm text-gray-700">
                 Stripe Checkout will open after placing the order.
               </p>
             )}
 
-            {paymentMethod === 'razorpay' && (
-              <BillingAddressForm
-                billingAddress={billingAddress}
-                setBillingAddress={setBillingAddress}
-                shippingAddress={shippingAddress}
-              />
-            )}
+            {paymentMethod === 'razorpay' && <BillingAddressForm />}
           </motion.div>
         )}
 

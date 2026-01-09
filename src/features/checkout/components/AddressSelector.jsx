@@ -1,27 +1,44 @@
-//src/features/checkout/components/AddressSelector.jsx
+// src/features/checkout/components/AddressSelector.jsx
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
+
 import AddAddressForm from './AddAddressForm';
 import { getAddresses, addAddress } from '../../user/services/userApi';
-import { useCheckoutStore } from '../store/checkoutStore';
+import { useCheckoutDomainStore } from '@/stores/checkout';
 
 export default function AddressSelector() {
-  const { shippingAddress, setShippingAddress } = useCheckoutStore();
+  const shippingAddress = useCheckoutDomainStore((s) => s.shippingAddress);
+  const setShippingAddress = useCheckoutDomainStore(
+    (s) => s.setShippingAddress
+  );
+
   const [addresses, setAddresses] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
+    let active = true;
+
+    const load = async () => {
       const data = await getAddresses();
+      if (!active) return;
+
       setAddresses(data || []);
+
       if (!shippingAddress && data?.length) {
         setShippingAddress(data[0]);
       }
+
       setLoading(false);
-    })();
-  }, []);
+    };
+
+    load();
+
+    return () => {
+      active = false;
+    };
+  }, [shippingAddress, setShippingAddress]);
 
   if (loading) {
     return <p className="text-sm text-gray-500">Loading addresses…</p>;
@@ -32,6 +49,7 @@ export default function AddressSelector() {
       <AnimatePresence>
         {addresses.map((addr) => {
           const isSelected = shippingAddress?._id === addr._id;
+
           return (
             <motion.div key={addr._id} layout>
               <Card

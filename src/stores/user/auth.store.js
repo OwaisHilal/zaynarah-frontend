@@ -17,20 +17,28 @@ const clearAuthStorage = () => {
   sessionStorage.removeItem('user');
 };
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
   loading: false,
   error: '',
+  hydrated: false,
 
   hydrateSession: () => {
     const storage = getAuthStorage();
-    if (!storage) return;
 
     try {
-      const user = JSON.parse(storage.getItem('user'));
-      if (user) {
-        useUserDomainStore.getState().setUser(user);
+      if (storage) {
+        const user = JSON.parse(storage.getItem('user'));
+        if (user) {
+          useUserDomainStore.getState().setUser(user);
+        }
       }
     } catch {}
+
+    set({ hydrated: true });
+  },
+
+  isAuthenticated: () => {
+    return !!useUserDomainStore.getState().user;
   },
 
   login: async ({ email, password, rememberMe }) => {
@@ -74,6 +82,6 @@ export const useAuthStore = create((set) => ({
     disconnectNotificationsSSE();
     clearAuthStorage();
     useUserDomainStore.getState().resetUser();
-    set({ loading: false, error: '' });
+    set({ loading: false, error: '', hydrated: true });
   },
 }));

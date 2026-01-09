@@ -1,12 +1,12 @@
 // src/features/checkout/components/OrderSummary.jsx
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useCartDomainStore } from '@/stores/cart';
-import { useCheckoutStore } from '../store/checkoutStore';
+import { useCheckoutDomainStore } from '@/stores/checkout';
 import { formatCurrency } from '../utils/checkoutHelpers';
 
 export default function OrderSummary() {
   const cart = useCartDomainStore((s) => s.items);
-  const { shippingMethod } = useCheckoutStore();
+  const shippingMethod = useCheckoutDomainStore((s) => s.shippingMethod);
 
   const subtotal = cart.reduce(
     (s, i) => s + Number(i.price || 0) * Number(i.qty || 1),

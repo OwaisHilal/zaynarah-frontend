@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { useCheckoutDomainStore } from '@/stores/checkout';
 
-export default function BillingAddressForm({
-  billingAddress,
-  setBillingAddress,
-  shippingAddress,
-}) {
+export default function BillingAddressForm() {
+  const billingAddress = useCheckoutDomainStore((s) => s.billingAddress);
+  const shippingAddress = useCheckoutDomainStore((s) => s.shippingAddress);
+  const setBillingAddress = useCheckoutDomainStore((s) => s.setBillingAddress);
+
   const [form, setForm] = useState({
     fullName: '',
     phone: '',
@@ -27,12 +28,10 @@ export default function BillingAddressForm({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Initialize form if billingAddress exists
   useEffect(() => {
     if (billingAddress) setForm(billingAddress);
   }, [billingAddress]);
 
-  // Sync with shipping address when checkbox is checked
   useEffect(() => {
     if (sameAsShipping && shippingAddress) {
       setForm(shippingAddress);
@@ -58,7 +57,7 @@ export default function BillingAddressForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (sameAsShipping) return; // Already set from shipping
+    if (sameAsShipping) return;
 
     const errorMsg = validateForm();
     if (errorMsg) {
@@ -82,7 +81,6 @@ export default function BillingAddressForm({
       </CardHeader>
 
       <CardContent>
-        {/* Same as Shipping Checkbox */}
         <div className="mb-4 flex items-center gap-2">
           <Checkbox
             id="sameAsShipping"
@@ -94,7 +92,6 @@ export default function BillingAddressForm({
           </Label>
         </div>
 
-        {/* Billing Form */}
         {!sameAsShipping && (
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             {error && (

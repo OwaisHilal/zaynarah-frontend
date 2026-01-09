@@ -1,10 +1,21 @@
 // src/features/checkout/pages/OrderCancel.jsx
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+
+import { useCheckoutDomainStore, useCheckoutUIStore } from '@/stores/checkout';
 
 export default function OrderCancel() {
   const navigate = useNavigate();
+
+  const resetCheckoutDomain = useCheckoutDomainStore((s) => s.reset);
+  const resetCheckoutUI = useCheckoutUIStore((s) => s.reset);
+
+  useEffect(() => {
+    resetCheckoutDomain();
+    resetCheckoutUI();
+  }, [resetCheckoutDomain, resetCheckoutUI]);
 
   return (
     <div className="max-w-3xl mx-auto p-6">

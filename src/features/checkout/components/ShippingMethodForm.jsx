@@ -1,16 +1,19 @@
+// src/features/checkout/components/ShippingMethodForm.jsx
 import { Card, CardContent } from '@/components/ui/card';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '../utils/checkoutHelpers';
+import { useCheckoutDomainStore } from '@/stores/checkout';
 
-export default function ShippingMethodForm({
-  shippingMethods = [],
-  shippingMethod,
-  setShippingMethod,
-  loading,
-}) {
-  if (loading) return <p className="text-sm text-gray-500">Loading…</p>;
-  if (!shippingMethods.length)
+export default function ShippingMethodForm() {
+  const shippingMethod = useCheckoutDomainStore((s) => s.shippingMethod);
+  const setShippingMethod = useCheckoutDomainStore((s) => s.setShippingMethod);
+
+  const shippingMethods = useCheckoutDomainStore((s) => s.shippingMethods);
+  const shippingLoading = useCheckoutDomainStore((s) => s.shippingLoading);
+
+  if (shippingLoading) return <p className="text-sm text-gray-500">Loading…</p>;
+  if (!shippingMethods?.length)
     return <p className="text-sm text-gray-500">No shipping options.</p>;
 
   return (

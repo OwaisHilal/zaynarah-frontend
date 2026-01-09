@@ -1,8 +1,7 @@
-/* frontend/src/features/orders/components/OrderRow.jsx */
-import { useState } from 'react';
+// frontend/src/features/orders/components/OrderRow.jsx
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import OrderDetailsDrawer from './OrderDetailsDrawer';
+import { useOrdersDomainStore, useOrdersUIStore } from '@/stores/orders';
 
 const STATUS_STYLES = {
   placed: 'bg-gray-100 text-gray-800',
@@ -12,46 +11,43 @@ const STATUS_STYLES = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
-export default function OrderRow({ order }) {
-  const [open, setOpen] = useState(false);
+export default function OrderRow({ orderId }) {
+  const order = useOrdersDomainStore((s) => s.getById(orderId));
+  const selectOrder = useOrdersUIStore((s) => s.selectOrder);
 
-  const status = STATUS_STYLES[order.status] || 'bg-gray-100 text-gray-800';
+  if (!order) return null;
+
+  const statusClass = STATUS_STYLES[order.status] || STATUS_STYLES.placed;
 
   return (
-    <>
-      <Card className="rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-        <div className="space-y-1">
-          <p className="text-sm text-gray-500">Order</p>
-          <p className="font-semibold text-gray-900">
-            #{order._id || order.id}
-          </p>
-          <p className="text-sm text-gray-500">
-            {new Date(order.createdAt || order.date).toLocaleDateString()}
-          </p>
-        </div>
+    <Card className="rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6 hover:shadow-md transition-shadow">
+      <div className="space-y-1">
+        <p className="text-sm text-gray-500">Order</p>
+        <p className="font-semibold text-gray-900">#{order.id}</p>
+        <p className="text-sm text-gray-500">
+          {new Date(order.createdAt).toLocaleDateString()}
+        </p>
+      </div>
 
-        <div className="flex items-center gap-4">
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${status}`}
-          >
-            {order.status}
-          </span>
+      <div className="flex items-center gap-4">
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${statusClass}`}
+        >
+          {order.status}
+        </span>
 
-          <p className="font-semibold text-gray-900">
-            ₹{order.cartTotal?.grand || order.total}
-          </p>
+        <p className="font-semibold text-gray-900">
+          ₹{order.cartTotal?.grand || order.total}
+        </p>
 
-          <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-            View details
-          </Button>
-        </div>
-      </Card>
-
-      <OrderDetailsDrawer
-        open={open}
-        onClose={() => setOpen(false)}
-        order={order}
-      />
-    </>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => selectOrder(order.id)}
+        >
+          View details
+        </Button>
+      </div>
+    </Card>
   );
 }

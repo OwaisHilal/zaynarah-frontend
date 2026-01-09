@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useUserStore } from '../hooks/useUser';
 import UserProfile from '../components/UserProfile';
 import UserAddresses from '../components/UserAddresses';
+import UserOrders from '../components/UserOrders';
 
 export default function ProfilePage() {
   const { user } = useUserStore();
@@ -112,18 +113,7 @@ export default function ProfilePage() {
 
               <TabsContent value="orders">
                 <div className="bg-white rounded-3xl shadow-2xl p-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-semibold text-gray-900">
-                      Orders
-                    </h2>
-                    <Button asChild variant="outline" size="sm">
-                      <Link to="/orders">View all orders</Link>
-                    </Button>
-                  </div>
-                  <p className="text-gray-600">
-                    Review your past purchases, track deliveries, and download
-                    invoices from your orders page.
-                  </p>
+                  <UserOrders />
                 </div>
               </TabsContent>
             </div>

@@ -1,4 +1,4 @@
-/* frontend/src/features/orders/services/ordersApi.js */
+// frontend/src/features/orders/services/ordersApi.js
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
@@ -22,13 +22,21 @@ export async function fetchMyOrders({ page = 1, limit = 10, status } = {}) {
   if (status) params.append('status', status);
 
   const res = await api.get(`/orders/my-orders?${params.toString()}`);
-
   return res.data || [];
 }
 
 export async function fetchOrderById(orderId) {
   if (!orderId) throw new Error('Order ID is required');
-
   const res = await api.get(`/orders/${orderId}`);
+  return res.data;
+}
+
+export async function downloadOrderInvoice(orderId) {
+  if (!orderId) throw new Error('Order ID is required');
+
+  const res = await api.get(`/orders/${orderId}/invoice`, {
+    responseType: 'text',
+  });
+
   return res.data;
 }

@@ -3,7 +3,7 @@
 This document is the authoritative technical and product context for the **Zaynarah** e-commerce platform.  
 It reflects the **current, real implementation state** of the system.
 
-This file supersedes all prior assumptions and must remain in sync with production behavior.
+This file supersedes all prior assumptions and must remain in sync with **production behavior**.
 
 ---
 
@@ -19,7 +19,7 @@ The platform is architected as an **enterprise-grade, modular system** with:
 - production-safe routing and state isolation
 - operational readiness for scale
 
-The project is currently in a **backend-complete + frontend domain-stabilized phase**, with all critical commerce flows hardened and verified.
+The project is currently in a **backend-complete + frontend domain-stabilized phase**, with all **core commerce flows hardened, refactored, and verified**.
 
 ---
 
@@ -30,11 +30,11 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 - **Framework:** Vite + React
 - **State Management:** Zustand
   - feature-scoped stores
-  - strict separation of domain state vs UI state
+  - strict separation of **domain state** vs **UI state**
   - app-level hydration only
 - **UI System:** shadcn/ui
 - **Routing:** React Router (hydration-aware, guarded)
-- **Data Access:** Axios (partial consolidation pending)
+- **Data Access:** Axios (feature-scoped; consolidation pending)
 - **UX Feedback:** Toast-based, non-blocking
 - **Checkout Pattern:** Step-based deterministic state machine
 
@@ -48,40 +48,40 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 - **Payments:** Stripe & Razorpay (server-authoritative)
 - **Webhooks:** Stripe & Razorpay (signature verified)
 - **Email:** SMTP (Nodemailer)
-- **PDF Generation:** Puppeteer (invoice generation)
+- **Invoice Generation:** HTML + PDF via Puppeteer
 
 ---
 
 ## 📊 Feature Status Matrix (Actual State)
 
-| Feature / Module                 | Frontend Status | Backend Status | Notes                                     |
-| -------------------------------- | --------------- | -------------- | ----------------------------------------- |
-| Auth (Login / Signup / Sessions) | ✅ Complete     | ✅ Complete    | Hydration-safe, remember-me, refresh-safe |
-| Users / Profile                  | ✅ Stable       | ✅ Complete    | Profile UI complete                       |
-| Products / Shop (PLP)            | ✅ Stable       | ✅ Complete    | Pagination & filters stable               |
-| Product Detail Page (PDP)        | ✅ Stable       | ✅ Complete    | Add-to-cart stable                        |
-| Cart (Guest + Auth)              | ✅ Complete     | ✅ Complete    | Guest persistence + merge-on-login        |
-| Mini Cart / Cart Badge           | ✅ Stable       | N/A            | Fully synced                              |
-| Checkout (State Machine)         | ✅ Complete     | ✅ Complete    | Domain + UI stores finalized              |
-| Orders                           | ⚙️ UI Partial   | ✅ Complete    | Frontend refactor pending                 |
-| Payments                         | ✅ Stable       | ✅ Complete    | Webhook-authoritative                     |
-| Webhooks                         | ❌ UI           | ✅ Complete    | Production-safe                           |
-| Notifications (In-App)           | ✅ Complete     | ✅ Complete    | SSE + pagination + read state             |
-| Notifications (Email)            | ❌ UI           | ✅ Complete    | Rule-based                                |
-| Invoices (HTML + PDF)            | ❌ UI           | ✅ Complete    | Auto-generated                            |
-| Refunds                          | ❌ UI           | ✅ Complete    | Admin-only                                |
-| Admin Dashboard                  | ⚙️ Partial UI   | ✅ Complete    | Frontend incomplete                       |
-| Categories / Filters             | ⚙️ Partial      | ⚙️ Partial     | Advanced faceting pending                 |
-| Coupons / Discounts              | ❌ Not Started  | ❌ Not Started | —                                         |
-| Reviews                          | ⚙️ UI Only      | ❌ Not Started | APIs missing                              |
-| Wishlist                         | ⚙️ Local        | ❌ Not Started | Backend pending                           |
-| Uploads / Assets                 | ❌ Not Started  | ❌ Not Started | —                                         |
-| API Client Unification           | ⚙️ Partial      | ✅ Complete    | Frontend consolidation pending            |
-| Error Handling                   | ⚙️ Partial      | ✅ Complete    | FE boundaries pending                     |
-| Performance                      | ⚙️ Partial      | ⚙️ Partial     | FE optimizations pending                  |
-| Testing / QA                     | ❌ Not Started  | ⚙️ Partial     | No FE tests                               |
-| Accessibility & SEO              | ❌ Not Started  | N/A            | —                                         |
-| CI/CD                            | ❌ Not Started  | ⚙️ Partial     | FE pipeline missing                       |
+| Feature / Module                 | Frontend Status    | Backend Status | Notes                                     |
+| -------------------------------- | ------------------ | -------------- | ----------------------------------------- |
+| Auth (Login / Signup / Sessions) | ✅ Complete        | ✅ Complete    | Hydration-safe, remember-me, refresh-safe |
+| Users / Profile                  | ✅ Stable          | ✅ Complete    | Profile UI complete, orders removed       |
+| Products / Shop (PLP)            | ⚙️ Stable (Legacy) | ✅ Complete    | Refactor planned                          |
+| Product Detail Page (PDP)        | ⚙️ Stable (Legacy) | ✅ Complete    | Add-to-cart stable                        |
+| Cart (Guest + Auth)              | ✅ Complete        | ✅ Complete    | Guest persistence + merge-on-login        |
+| Mini Cart / Cart Badge           | ✅ Stable          | N/A            | Fully synced                              |
+| Checkout (State Machine)         | ✅ Complete        | ✅ Complete    | Domain + UI stores finalized              |
+| Orders                           | ✅ Complete        | ✅ Complete    | Domain + UI stores finalized              |
+| Payments                         | ✅ Stable          | ✅ Complete    | Webhook-authoritative                     |
+| Webhooks                         | ❌ UI              | ✅ Complete    | Production-safe                           |
+| Notifications (In-App)           | ✅ Complete        | ✅ Complete    | SSE + pagination + read state             |
+| Notifications (Email)            | ❌ UI              | ✅ Complete    | Rule-based                                |
+| Invoices (HTML + PDF)            | ⚙️ Partial UI      | ✅ Complete    | Download via Orders UI                    |
+| Refunds                          | ❌ UI              | ✅ Complete    | Admin-only                                |
+| Admin Dashboard                  | ⚙️ Partial UI      | ✅ Complete    | Frontend incomplete                       |
+| Categories / Filters             | ⚙️ Partial         | ⚙️ Partial     | Advanced faceting pending                 |
+| Coupons / Discounts              | ❌ Not Started     | ❌ Not Started | —                                         |
+| Reviews                          | ⚙️ UI Only         | ❌ Not Started | APIs missing                              |
+| Wishlist                         | ⚙️ Local           | ❌ Not Started | Backend pending                           |
+| Uploads / Assets                 | ❌ Not Started     | ❌ Not Started | —                                         |
+| API Client Unification           | ⚙️ Partial         | ✅ Complete    | FE consolidation pending                  |
+| Error Handling                   | ⚙️ Partial         | ✅ Complete    | FE boundaries pending                     |
+| Performance                      | ⚙️ Partial         | ⚙️ Partial     | FE optimizations pending                  |
+| Testing / QA                     | ❌ Not Started     | ⚙️ Partial     | No FE tests                               |
+| Accessibility & SEO              | ❌ Not Started     | N/A            | —                                         |
+| CI/CD                            | ❌ Not Started     | ⚙️ Partial     | FE pipeline missing                       |
 
 ---
 
@@ -103,7 +103,7 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 
 ## 🧾 Checkout Flow (Server-Authoritative)
 
-1. Cart seeds checkout **once**
+1. Cart seeds checkout once
 2. Checkout session initialized from cart snapshot
 3. Shipping address selection
 4. Shipping method selection
@@ -118,7 +118,7 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 ## 🔐 Checkout State Guarantees (Hardened)
 
 - Checkout domain store is the **single source of truth**
-- Cart is never re-read after checkout session initialization
+- Cart is never re-read after checkout initialization
 - Shipping methods load only after address selection
 - Totals persist across refresh via controlled hydration
 - App-level hydration prevents redirect loops and blank screens
@@ -130,13 +130,36 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 
 - JWT with persistent session records
 - Supports:
-  - Remember Me
+  - Remember-me
   - Multi-device sessions
   - Session revocation
   - Activity tracking
 - Route guards wait for auth hydration
 - Hard refresh on protected routes is safe
 - Logout restores guest cart context
+
+---
+
+## 📦 Orders (Frontend & Backend)
+
+### Orders Frontend (Completed)
+
+- Orders domain store finalized
+- Orders UI store finalized
+- Orders page fully wired
+- Order details drawer wired correctly
+- Invoice download routed through services layer
+- Backend response shape handled defensively
+- Orders UI removed from User Profile (single source of truth)
+- No regressions
+
+### Orders Backend (Stable)
+
+- Server-authoritative order lifecycle
+- Status normalization
+- Invoice generation
+- Payment-linked transitions
+- Idempotent updates
 
 ---
 
@@ -153,7 +176,7 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 ### Email Notifications
 
 - Rule-based dispatch
-- Asynchronous delivery via queue
+- Async delivery via queue
 - Invoice PDFs attached automatically
 - SMTP provider configurable
 
@@ -161,8 +184,8 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 
 ## 💳 Payments & Webhooks
 
-- **No client-side payment confirmation**
-- All payments confirmed exclusively via:
+- No client-side payment confirmation
+- Payments confirmed exclusively via:
   - Stripe webhooks
   - Razorpay webhooks
 - Signature verification enforced
@@ -175,54 +198,56 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 
 ### Fully Stable
 
-- Authentication and session hydration
+- Authentication & session hydration
 - Cart lifecycle
-- Checkout domain and UI
-- Order state machine (backend)
-- Payments and webhooks
-- Notifications (in-app and email)
+- Checkout domain & UI
+- Orders frontend & backend
+- Payments & webhooks
+- Notifications (in-app & email)
 - Invoice generation
-- Protected routing and refresh behavior
+- Protected routing & refresh behavior
 
 ### Needs Frontend Refactor
 
-- Orders UI domain separation
+- Products frontend architecture
 - Admin UI completeness
 - API client consolidation
 
-### Not Started (Remaining Work)
+### Not Started
 
 - Frontend testing
-- Accessibility and SEO
-- CI/CD for frontend
-- Uploads and asset pipeline
+- Accessibility & SEO
+- CI/CD (frontend)
+- Uploads & asset pipeline
 
 ---
 
 ## 🧭 Overall Project Health
 
 - **Status:** 🟢 Core commerce flows production-safe
-- **Execution Progress:** ~92%
+- **Execution Progress:** ~94%
 - **Architecture Quality:** ⭐⭐⭐⭐⭐ (commerce core)
 
 ### Primary Remaining Risks
 
-1. Orders frontend architecture debt
-2. Frontend testing gap
-3. Admin UX completeness
-4. SEO and accessibility
+- Products frontend architectural debt
+- Frontend testing gap
+- Admin UX completeness
+- SEO & accessibility
 
 ---
 
 ## 📍 Next Planned Phase
 
-### 👉 Orders Frontend Domain Refactor (Next)
+### 👉 Products Frontend Domain Refactor (Next)
 
-- Introduce Orders domain store
-- Introduce Orders UI store
-- Rewire Orders pages and components
-- Eliminate direct API usage from UI
-- Preserve existing UI and behavior
+- Introduce Products **domain store**
+- Introduce Products **UI store**
+- Refactor Shop (PLP) state management
+- Refactor filters, sorting, pagination
+- Normalize product entities
+- Preserve UI & behavior
+- Do not touch Cart, Orders, or Search internals
 
 ---
 

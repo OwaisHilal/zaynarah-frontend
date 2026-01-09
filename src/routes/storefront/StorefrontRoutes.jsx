@@ -1,26 +1,25 @@
 // src/routes/storefront/StorefrontRoutes.jsx
-import { Route, Routes, Navigate, useLocation } from 'react-router-dom';
-import SearchProvider from '@/features/search/context/SearchProvider';
-import { ToastProvider } from '@/features/ui/toast';
-import Layout from '@/features/ui/Layout';
-import Home from '@/pages/Home';
-import ShopPage from '@/features/products/pages/ShopPage';
-import ProductPage from '@/features/products/pages/ProductPage';
 import CartPage from '@/features/cart/pages/CartPage';
 import CheckoutPage from '@/features/checkout/pages/CheckoutPage';
 import OrderSuccessPage from '@/features/checkout/pages/OrderSuccess';
-import TheCraftPage from '@/pages/TheCraft';
-import LoginPage from '@/features/user/pages/LoginPage';
-import SignupPage from '@/features/user/pages/SignupPage';
-import ProfilePage from '@/features/user/pages/ProfilePage';
-import VerifyEmailPage from '@/features/user/pages/VerifyEmailPage';
-import ForgotPasswordPage from '@/features/user/pages/ForgotPasswordPage';
-import ResetPasswordPage from '@/features/user/pages/ResetPasswordPage';
-import OrdersPage from '@/features/orders/pages/OrdersPage';
 import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
+import OrdersPage from '@/features/orders/pages/OrdersPage';
+import ProductPage from '@/features/products/pages/ProductPage';
+import ShopPage from '@/features/products/pages/ShopPage';
 import SearchModal from '@/features/search/components/SearchModal';
-import { useAuthStore } from '@/stores/user';
-import { useUserDomainStore } from '@/stores/user';
+import SearchProvider from '@/features/search/context/SearchProvider';
+import Layout from '@/features/ui/Layout';
+import { ToastProvider } from '@/features/ui/toast';
+import ForgotPasswordPage from '@/features/user/pages/ForgotPasswordPage';
+import LoginPage from '@/features/user/pages/LoginPage';
+import ProfilePage from '@/features/user/pages/ProfilePage';
+import ResetPasswordPage from '@/features/user/pages/ResetPasswordPage';
+import SignupPage from '@/features/user/pages/SignupPage';
+import VerifyEmailPage from '@/features/user/pages/VerifyEmailPage';
+import Home from '@/pages/Home';
+import TheCraftPage from '@/pages/TheCraft';
+import { useAuthStore, useUserDomainStore } from '@/stores/user';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 function AuthBlockingShell() {
   return (

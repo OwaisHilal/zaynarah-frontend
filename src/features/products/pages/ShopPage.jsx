@@ -1,8 +1,7 @@
 // src/features/products/pages/ShopPage.jsx
-import { useState, useEffect, useCallback } from 'react';
-import { fetchProducts } from '../services/productsApi';
-import ProductFilters from '../components/ProductFilters';
+import { useEffect, useMemo } from 'react';
 import ProductGrid from '../components/ProductGrid';
+import ProductFilters from '../components/ProductFilters';
 import { ArrowLeft, ArrowRight, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,58 +11,44 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { useProductsDomainStore, useProductsUIStore } from '@/stores/products';
 
 export default function ShopPage() {
-  const [items, setItems] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [priceRange, setPriceRange] = useState({ max: 1000, value: 1000 });
-  const [sort, setSort] = useState('createdAt:desc');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const { ids, entities, loading, pagination, fetchList } =
+    useProductsDomainStore();
 
-  const loadProducts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetchProducts({
-        page,
-        limit: 9,
-        category: selectedCategory || undefined,
-        priceMax: priceRange.value,
-        sort,
-      });
-
-      setItems(res.data || []);
-      setTotalPages(res.totalPages || 1);
-
-      setCategories(
-        Array.from(
-          new Set((res.data || []).map((p) => p.category).filter(Boolean))
-        )
-      );
-
-      const maxPrice = Math.max(
-        ...(res.data || []).map((p) => p.price || 0),
-        1000
-      );
-
-      setPriceRange((p) => ({
-        ...p,
-        max: maxPrice,
-        value: Math.min(p.value, maxPrice),
-      }));
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, selectedCategory, priceRange.value, sort]);
+  const {
+    category,
+    priceMax,
+    sort,
+    page,
+    sheetOpen,
+    setCategory,
+    setPriceMax,
+    setSort,
+    setPage,
+    setSheetOpen,
+    reset,
+  } = useProductsUIStore();
 
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+    fetchList({
+      page,
+      limit: 9,
+      category: category || undefined,
+      priceMax,
+      sort,
+    });
+  }, [page, category, priceMax, sort, fetchList]);
+
+  const items = ids.map((id) => entities[id]);
+
+  const categories = useMemo(
+    () => Array.from(new Set(items.map((p) => p.category).filter(Boolean))),
+    [items]
+  );
+
+  const maxPrice = Math.max(...items.map((p) => p.price || 0), 1000);
 
   if (loading) {
     return (
@@ -75,7 +60,6 @@ export default function ShopPage() {
 
   return (
     <div className="bg-bg-primary pb-24">
-      {/* HERO */}
       <section
         className="relative h-[42vh] flex items-center"
         style={{
@@ -95,56 +79,36 @@ export default function ShopPage() {
         </div>
       </section>
 
-      {/* TRANSITION */}
-      <section className="max-w-3xl mx-auto px-6 py-14 text-center">
-        <p className="text-sm uppercase tracking-widest text-text-secondary">
-          Curated Selection
-        </p>
-        <p className="mt-4 text-lg text-foreground leading-relaxed">
-          Each piece is woven by master artisans using centuries-old techniques.
-          Refine the collection to discover what speaks to you.
-        </p>
-      </section>
-
-      {/* FILTER BAR */}
-      <section className="max-w-7xl mx-auto px-6 mb-10 flex flex-wrap items-center justify-between gap-4">
+      <section className="max-w-7xl mx-auto px-6 mb-10 flex items-center justify-between">
         <div className="text-sm text-text-secondary">
           Showing{' '}
           <span className="font-medium text-foreground">{items.length}</span>{' '}
           pieces
         </div>
 
-        <div className="flex items-center gap-3">
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <div className="flex gap-3">
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
                 <Filter size={14} /> Refine
               </Button>
             </SheetTrigger>
-
             <SheetContent side="left">
               <SheetHeader>
                 <SheetTitle>Refine Collection</SheetTitle>
               </SheetHeader>
               <ProductFilters
                 categories={categories}
-                selectedCategory={selectedCategory}
-                onCategoryChange={(c) => {
-                  setSelectedCategory(c);
-                  setPage(1);
-                  setIsSheetOpen(false);
+                selectedCategory={category}
+                onCategoryChange={(v) => {
+                  setCategory(v);
+                  setSheetOpen(false);
                 }}
-                priceRange={priceRange}
-                onPriceChange={(v) => {
-                  setPriceRange((p) => ({ ...p, value: v }));
-                  setPage(1);
-                }}
+                priceRange={{ max: maxPrice, value: priceMax }}
+                onPriceChange={setPriceMax}
                 onReset={() => {
-                  setSelectedCategory('');
-                  setPriceRange((p) => ({ ...p, value: p.max }));
-                  setSort('createdAt:desc');
-                  setPage(1);
-                  setIsSheetOpen(false);
+                  reset();
+                  setSheetOpen(false);
                 }}
               />
             </SheetContent>
@@ -152,10 +116,7 @@ export default function ShopPage() {
 
           <select
             value={sort}
-            onChange={(e) => {
-              setSort(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => setSort(e.target.value)}
             className="border rounded-md px-3 py-2 text-sm bg-white"
           >
             <option value="createdAt:desc">Newest</option>
@@ -165,16 +126,14 @@ export default function ShopPage() {
         </div>
       </section>
 
-      {/* GRID */}
       <section className="max-w-7xl mx-auto px-6">
         <ProductGrid items={items} />
       </section>
 
-      {/* PAGINATION */}
       <section className="mt-16 flex justify-center items-center gap-6">
         <button
           disabled={page === 1}
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          onClick={() => setPage(Math.max(1, page - 1))}
           className="px-5 py-2 rounded-full border text-sm disabled:opacity-40"
         >
           <ArrowLeft size={14} /> Previous
@@ -183,8 +142,8 @@ export default function ShopPage() {
         <span className="font-medium">{page}</span>
 
         <button
-          disabled={page === totalPages}
-          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          disabled={page === pagination.totalPages}
+          onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
           className="px-5 py-2 rounded-full border text-sm disabled:opacity-40"
         >
           Next <ArrowRight size={14} />

@@ -1,3 +1,4 @@
+//src\features\products\hooks\useProducts.js
 import { useState, useEffect } from 'react';
 import { getProducts } from '../services/productsApi';
 

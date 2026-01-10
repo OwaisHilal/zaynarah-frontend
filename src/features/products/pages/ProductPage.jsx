@@ -7,7 +7,7 @@ import ProductGallery from '../components/ProductPage/ProductGallery';
 import ProductDetails from '../components/ProductPage/ProductDetails';
 import ProductVariants from '../components/ProductPage/ProductVariants';
 import ProductActions from '../components/ProductPage/ProductActions';
-import ProductReviews from '../components/ProductPage/ProductReviews';
+import ProductReviewsConnector from '../components/ProductPage/ProductReviewsConnector';
 import SizeGuideModal from '../components/ProductPage/SizeGuideModal';
 import MobileStickyCTA from '../components/ProductPage/MobileStickyCTA';
 import RelatedProducts from '../components/RelatedProducts';
@@ -39,7 +39,9 @@ export default function ProductPage() {
       setProduct(normalized);
       setMainImage(normalized.images[0] ?? null);
     });
-    return () => (mounted = false);
+    return () => {
+      mounted = false;
+    };
   }, [id, fetchById]);
 
   if (loading || !product) {
@@ -89,7 +91,7 @@ export default function ProductPage() {
         </div>
 
         <section className="mt-20 pt-12 border-t">
-          <ProductReviews product={product} />
+          <ProductReviewsConnector productId={product._id} />
         </section>
 
         <section className="mt-20">

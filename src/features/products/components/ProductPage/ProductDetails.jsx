@@ -1,18 +1,18 @@
 // src/features/products/components/ProductPage/ProductDetails.jsx
-
 import { ShieldCheck, Truck, RefreshCcw } from 'lucide-react';
+import AverageRating from './AverageRating';
 
 export default function ProductDetails({ product }) {
   return (
     <section className="space-y-6">
-      {/* Title */}
-      <header>
+      <header className="space-y-3">
         <h1 className="text-3xl md:text-4xl font-serif font-semibold leading-tight">
           {product.title}
         </h1>
+
+        <AverageRating productId={product._id} />
       </header>
 
-      {/* Price */}
       <div>
         <div className="text-2xl md:text-3xl font-semibold">
           ₹{product.price}
@@ -22,7 +22,6 @@ export default function ProductDetails({ product }) {
         </p>
       </div>
 
-      {/* Trust Stack */}
       <ul className="space-y-3 text-sm">
         <li className="flex items-start gap-3">
           <ShieldCheck size={18} className="mt-0.5 text-primary" />
@@ -48,12 +47,10 @@ export default function ProductDetails({ product }) {
         </li>
       </ul>
 
-      {/* Description */}
       <p className="text-sm leading-relaxed text-muted-foreground pt-2">
         {product.description}
       </p>
 
-      {/* Divider */}
       <div className="h-px bg-border mt-4" />
     </section>
   );

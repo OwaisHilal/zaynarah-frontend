@@ -1,7 +1,23 @@
 // frontend/src/stores/reviews/reviews.store.js
 import { create } from 'zustand';
 import { produce } from 'immer';
-import * as api from '../../features/reviews/reviewsApi';
+import * as api from '@/features/reviews/services/reviewsApi';
+
+const getKey = ({ productId, page, limit, sort }) =>
+  `${productId}|${page}|${limit}|${sort}`;
+
+const ensureProduct = (d, productId) => {
+  if (!d.byProduct[productId]) {
+    d.byProduct[productId] = {
+      pages: {},
+      meta: {
+        avgRating: 0,
+        totalReviews: 0,
+        ratingCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      },
+    };
+  }
+};
 
 const useReviewsStore = create((set, get) => ({
   byId: {},
@@ -15,165 +31,131 @@ const useReviewsStore = create((set, get) => ({
     limit = 10,
     sort = 'newest',
   }) => {
-    const cacheKey = `${productId}_${page}_${sort}`;
+    const key = getKey({ productId, page, limit, sort });
 
-    if (get().loading[cacheKey]) return;
+    if (get().loading[key]) return;
+    if (get().byProduct[productId]?.pages?.[page]) return;
 
     set(
-      produce((draft) => {
-        draft.loading[cacheKey] = true;
-        draft.error[cacheKey] = null;
+      produce((d) => {
+        d.loading[key] = true;
+        d.error[key] = null;
       })
     );
 
     try {
-      const res = await api.fetchReviews({ productId, page, limit, sort });
-
-      const items = Array.isArray(res?.items)
-        ? res.items
-        : Array.isArray(res?.reviews)
-        ? res.reviews
-        : [];
-
-      const summary =
-        res?.summary && typeof res.summary === 'object' ? res.summary : null;
+      const { items, summary } = await api.fetchReviews({
+        productId,
+        page,
+        limit,
+        sort,
+      });
 
       set(
-        produce((draft) => {
+        produce((d) => {
+          ensureProduct(d, productId);
+
           items.forEach((r) => {
-            if (r && r._id) {
-              draft.byId[r._id] = r;
-            }
+            d.byId[r._id] = r;
           });
 
-          if (!draft.byProduct[productId]) {
-            draft.byProduct[productId] = {
-              pages: {},
-              meta: {},
-            };
-          }
+          d.byProduct[productId].pages[page] = items.map((i) => i._id);
+          d.byProduct[productId].meta = summary;
 
-          draft.byProduct[productId].pages[page] = items.map((i) => i._id);
-
-          if (summary) {
-            draft.byProduct[productId].meta = summary;
-          }
-
-          draft.loading[cacheKey] = false;
+          d.loading[key] = false;
         })
       );
-
-      return res;
     } catch (err) {
       set(
-        produce((draft) => {
-          draft.loading[cacheKey] = false;
-          draft.error[cacheKey] = err?.message || 'Failed to load reviews';
+        produce((d) => {
+          d.loading[key] = false;
+          d.error[key] = err?.message || 'Failed to load reviews';
         })
       );
       throw err;
     }
   },
 
-  fetchSummary: async (productId) => {
-    try {
-      const res = await api.fetchSummary(productId);
-
-      if (!res || typeof res !== 'object') return null;
-
-      set(
-        produce((draft) => {
-          if (!draft.byProduct[productId]) {
-            draft.byProduct[productId] = {
-              pages: {},
-              meta: {},
-            };
-          }
-
-          draft.byProduct[productId].meta = res;
-        })
-      );
-
-      return res;
-    } catch {
-      return null;
-    }
+  refreshProduct: async (productId) => {
+    set(
+      produce((d) => {
+        delete d.byProduct[productId];
+        Object.keys(d.loading).forEach((k) => {
+          if (k.startsWith(`${productId}|`)) delete d.loading[k];
+        });
+        Object.keys(d.error).forEach((k) => {
+          if (k.startsWith(`${productId}|`)) delete d.error[k];
+        });
+      })
+    );
   },
 
   createReview: async ({ productId, rating, title, body }) => {
-    const res = await api.postReview({ productId, rating, title, body });
-
-    if (!res || !res._id) return res;
+    const review = await api.createReview({ productId, rating, title, body });
 
     set(
-      produce((draft) => {
-        draft.byId[res._id] = res;
+      produce((d) => {
+        ensureProduct(d, productId);
 
-        if (!draft.byProduct[productId]) {
-          draft.byProduct[productId] = {
-            pages: {},
-            meta: {},
-          };
-        }
+        d.byId[review._id] = review;
 
-        const firstPage = draft.byProduct[productId].pages[1] || [];
+        const firstPage = d.byProduct[productId].pages[1] || [];
+        d.byProduct[productId].pages[1] = [review._id, ...firstPage];
 
-        draft.byProduct[productId].pages[1] = [res._id, ...firstPage];
+        const meta = d.byProduct[productId].meta;
+        const total = (meta.totalReviews || 0) + 1;
+        const sum = meta.avgRating * (total - 1) + rating;
 
-        const meta = draft.byProduct[productId].meta || {};
-
-        draft.byProduct[productId].meta = {
+        d.byProduct[productId].meta = {
           ...meta,
-          totalReviews: (meta.totalReviews || 0) + 1,
-          avgRating: meta.avgRating || rating,
+          totalReviews: total,
+          avgRating: sum / total,
+          ratingCounts: {
+            ...meta.ratingCounts,
+            [rating]: (meta.ratingCounts[rating] || 0) + 1,
+          },
         };
       })
     );
 
-    return res;
+    return review;
   },
 
-  editReview: async (id, payload) => {
-    const res = await api.putReview(id, payload);
-
-    if (!res || !id) return res;
+  removeReview: async ({ productId, reviewId }) => {
+    await api.removeReview(reviewId);
 
     set(
-      produce((draft) => {
-        draft.byId[id] = res;
-      })
-    );
-
-    return res;
-  },
-
-  deleteReview: async (id) => {
-    const res = await api.deleteReview(id);
-
-    set(
-      produce((draft) => {
-        const review = draft.byId[id];
+      produce((d) => {
+        const review = d.byId[reviewId];
         if (!review) return;
 
-        const productId = review.productId;
-        delete draft.byId[id];
+        const rating = review.rating;
 
-        const product = draft.byProduct[productId];
+        delete d.byId[reviewId];
+
+        const product = d.byProduct[productId];
         if (!product) return;
 
-        Object.keys(product.pages).forEach((page) => {
-          product.pages[page] = product.pages[page].filter(
-            (revId) => revId !== id
-          );
+        Object.keys(product.pages).forEach((p) => {
+          product.pages[p] = product.pages[p].filter((id) => id !== reviewId);
         });
 
-        if (product.meta?.totalReviews) {
-          product.meta.totalReviews -= 1;
-        }
+        const meta = product.meta;
+        const total = Math.max((meta.totalReviews || 1) - 1, 0);
+
+        const sum = meta.avgRating * (total + 1) - rating;
+
+        product.meta = {
+          ...meta,
+          totalReviews: total,
+          avgRating: total === 0 ? 0 : sum / total,
+          ratingCounts: {
+            ...meta.ratingCounts,
+            [rating]: Math.max((meta.ratingCounts[rating] || 1) - 1, 0),
+          },
+        };
       })
     );
-
-    return res;
   },
 }));
 

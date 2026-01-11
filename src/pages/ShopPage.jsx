@@ -1,7 +1,7 @@
-// src/features/products/pages/ShopPage.jsx
+// frontend/src/pages/ShopPage.jsx
 import { useEffect, useMemo } from 'react';
-import ProductGrid from '../components/ProductGrid';
-import ProductFilters from '../components/ProductFilters';
+import ProductGrid from '@/features/products/components/ProductGrid';
+import ProductFilters from '@/features/products/components/ProductFilters';
 import { ArrowLeft, ArrowRight, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {

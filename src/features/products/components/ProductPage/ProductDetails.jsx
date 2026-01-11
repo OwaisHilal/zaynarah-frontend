@@ -1,6 +1,6 @@
 // src/features/products/components/ProductPage/ProductDetails.jsx
+import AverageRating from '@/features/reviews/components/AverageRating';
 import { ShieldCheck, Truck, RefreshCcw } from 'lucide-react';
-import AverageRating from './AverageRating';
 
 export default function ProductDetails({ product }) {
   return (

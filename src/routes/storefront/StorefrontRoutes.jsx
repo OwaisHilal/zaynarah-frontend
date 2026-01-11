@@ -5,7 +5,7 @@ import OrderSuccessPage from '@/features/checkout/pages/OrderSuccess';
 import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 import OrdersPage from '@/features/orders/pages/OrdersPage';
 import ProductPage from '@/features/products/pages/ProductPage';
-import ShopPage from '@/features/products/pages/ShopPage';
+import ShopPage from '@/pages/ShopPage';
 import SearchModal from '@/features/search/components/SearchModal';
 import SearchProvider from '@/features/search/context/SearchProvider';
 import Layout from '@/features/ui/Layout';

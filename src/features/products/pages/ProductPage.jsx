@@ -1,4 +1,4 @@
-// src/features/products/pages/ProductPage.jsx
+// frontend/src/features/products/pages/ProductPage.jsx
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useProductsDomainStore } from '@/stores/products';
@@ -7,10 +7,11 @@ import ProductGallery from '../components/ProductPage/ProductGallery';
 import ProductDetails from '../components/ProductPage/ProductDetails';
 import ProductVariants from '../components/ProductPage/ProductVariants';
 import ProductActions from '../components/ProductPage/ProductActions';
-import ProductReviewsConnector from '../components/ProductPage/ProductReviewsConnector';
 import SizeGuideModal from '../components/ProductPage/SizeGuideModal';
 import MobileStickyCTA from '../components/ProductPage/MobileStickyCTA';
 import RelatedProducts from '../components/RelatedProducts';
+
+import ProductReviews from '@/features/reviews/components/ProductReviews';
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -29,16 +30,20 @@ export default function ProductPage() {
 
   useEffect(() => {
     let mounted = true;
+
     fetchById(id).then((p) => {
       if (!mounted || !p) return;
+
       const normalized = {
         ...p,
         images: p.images ?? (p.image ? [p.image] : []),
         variants: p.variants ?? [],
       };
+
       setProduct(normalized);
       setMainImage(normalized.images[0] ?? null);
     });
+
     return () => {
       mounted = false;
     };
@@ -91,7 +96,7 @@ export default function ProductPage() {
         </div>
 
         <section className="mt-20 pt-12 border-t">
-          <ProductReviewsConnector productId={product._id} />
+          <ProductReviews productId={product._id} />
         </section>
 
         <section className="mt-20">

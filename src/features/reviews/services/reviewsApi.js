@@ -1,7 +1,12 @@
 // frontend/src/features/reviews/services/reviewsApi.js
 import axios from 'axios';
 
-const BASE_URL = '/api/reviews';
+const BASE_URL = `${import.meta.env.VITE_API_BASE}/reviews`;
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return { Authorization: `Bearer ${token}` };
+};
 
 export async function fetchReviews({
   productId,
@@ -41,16 +46,22 @@ export async function fetchSummary(productId) {
 }
 
 export async function createReview(payload) {
-  const res = await axios.post(BASE_URL, payload);
+  const res = await axios.post(BASE_URL, payload, {
+    headers: getAuthHeaders(),
+  });
   return res.data;
 }
 
 export async function updateReview(id, payload) {
-  const res = await axios.put(`${BASE_URL}/${id}`, payload);
+  const res = await axios.put(`${BASE_URL}/${id}`, payload, {
+    headers: getAuthHeaders(),
+  });
   return res.data;
 }
 
 export async function removeReview(id) {
-  const res = await axios.delete(`${BASE_URL}/${id}`);
+  const res = await axios.delete(`${BASE_URL}/${id}`, {
+    headers: getAuthHeaders(),
+  });
   return res.data;
 }

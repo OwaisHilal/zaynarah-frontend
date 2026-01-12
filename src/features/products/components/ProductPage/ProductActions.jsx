@@ -4,21 +4,19 @@ import { Heart, Share2, Check, Minus, Plus } from 'lucide-react';
 
 import useCartActions from '@/features/cart/hooks/useCartActions';
 import { useToast } from '@/features/ui/toast/context/useToast';
+import useWishlistActions from '@/features/wishlist/hooks/useWishlistActions';
+import useWishlist from '@/features/wishlist/hooks/useWishlist';
 import { cn } from '@/lib/utils';
 
-export default function ProductActions({
-  product,
-  mainImage,
-  qty,
-  setQty,
-  wishlist,
-  setWishlist,
-}) {
+export default function ProductActions({ product, mainImage, qty, setQty }) {
   const { addItem } = useCartActions();
   const { showToast } = useToast();
+  const { toggleWishlist, isInWishlist } = useWishlistActions();
+  const { hydrated } = useWishlist();
 
   const [added, setAdded] = useState(false);
-  const inWishlist = wishlist.includes(product.id);
+
+  const inWishlist = hydrated && isInWishlist(product.id);
 
   const handleAddToCart = async () => {
     const result = await addItem(
@@ -41,13 +39,13 @@ export default function ProductActions({
     setTimeout(() => setAdded(false), 1600);
   };
 
-  const toggleWishlist = () => {
-    const next = inWishlist
-      ? wishlist.filter((id) => id !== product.id)
-      : [...wishlist, product.id];
-
-    setWishlist(next);
-    localStorage.setItem('zaynarah_wishlist', JSON.stringify(next));
+  const handleWishlistToggle = () => {
+    toggleWishlist({
+      productId: product.id,
+      title: product.title,
+      price: product.price,
+      image: mainImage || product.images?.[0],
+    });
     showToast(inWishlist ? 'Removed from wishlist' : 'Saved to wishlist');
   };
 
@@ -99,7 +97,7 @@ export default function ProductActions({
 
       <div className="flex items-center gap-6 text-sm">
         <button
-          onClick={toggleWishlist}
+          onClick={handleWishlistToggle}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition"
         >
           <Heart

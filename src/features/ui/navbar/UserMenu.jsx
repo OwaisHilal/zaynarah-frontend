@@ -59,6 +59,10 @@ export default function UserMenu() {
           <Link to="/orders">Orders</Link>
         </DropdownMenuItem>
 
+        <DropdownMenuItem asChild>
+          <Link to="/wishlist">Wishlist</Link>
+        </DropdownMenuItem>
+
         {isAdmin() && (
           <>
             <DropdownMenuSeparator />

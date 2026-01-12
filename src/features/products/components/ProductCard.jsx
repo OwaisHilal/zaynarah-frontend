@@ -1,19 +1,25 @@
 // src/features/products/components/ProductCard.jsx
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { Check, ShoppingBag } from 'lucide-react';
+import { Check, ShoppingBag, Heart } from 'lucide-react';
 
 import useCartActions from '@/features/cart/hooks/useCartActions';
 import { useToast } from '@/features/ui/toast/context/useToast';
+import useWishlistActions from '@/features/wishlist/hooks/useWishlistActions';
+import useWishlist from '@/features/wishlist/hooks/useWishlist';
 import { cn } from '@/lib/utils';
 
 export default function ProductCard({ product }) {
   const { addItem } = useCartActions();
   const { showToast } = useToast();
+  const { toggleWishlist, isInWishlist } = useWishlistActions();
+  const { hydrated } = useWishlist();
+
   const [added, setAdded] = useState(false);
 
   const id = product._id || product.id;
   const image = product.image || product.images?.[0];
+  const inWishlist = hydrated && isInWishlist(id);
 
   const handleAdd = () => {
     addItem(
@@ -28,19 +34,42 @@ export default function ProductCard({ product }) {
 
     setAdded(true);
     showToast('Added to cart');
-
     setTimeout(() => setAdded(false), 1400);
+  };
+
+  const handleWishlistToggle = () => {
+    toggleWishlist({
+      productId: id,
+      title: product.title,
+      price: product.price,
+      image,
+    });
+    showToast(inWishlist ? 'Removed from wishlist' : 'Saved to wishlist');
   };
 
   return (
     <article className="group bg-white rounded-2xl overflow-hidden border transition hover:shadow-xl">
       <Link to={`/product/${id}`}>
-        <div className="h-64 overflow-hidden">
+        <div className="h-64 overflow-hidden relative">
           <img
             src={image}
             alt={product.title}
             className="w-full h-full object-cover transition-transform group-hover:scale-105"
           />
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              handleWishlistToggle();
+            }}
+            className="absolute top-3 right-3 p-2 rounded-full bg-white/90 border shadow-sm hover:scale-105 transition"
+          >
+            <Heart
+              size={16}
+              className={cn(inWishlist && 'fill-accent text-accent')}
+            />
+          </button>
         </div>
       </Link>
 

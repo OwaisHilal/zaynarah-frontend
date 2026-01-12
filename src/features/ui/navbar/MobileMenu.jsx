@@ -1,4 +1,4 @@
-/* frontend/src/features/ui/navbar/MobileMenu.jsx */
+// src/features/ui/navbar/MobileMenu.jsx
 import { Link, useNavigate } from 'react-router-dom';
 import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,8 @@ export default function MobileMenu() {
             <Link to="/orders" className="text-lg font-medium">
               My Orders
             </Link>
+
+            <Link to="/wishlist">Wishlist</Link>
 
             <Link to="/profile">Profile</Link>
           </div>

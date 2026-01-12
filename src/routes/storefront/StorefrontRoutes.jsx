@@ -5,6 +5,7 @@ import OrderSuccessPage from '@/features/checkout/pages/OrderSuccess';
 import NotificationsPage from '@/features/notifications/pages/NotificationsPage';
 import OrdersPage from '@/features/orders/pages/OrdersPage';
 import ProductPage from '@/features/products/pages/ProductPage';
+import WishlistPage from '@/features/wishlist/pages/WishlistPage';
 import ShopPage from '@/pages/ShopPage';
 import SearchModal from '@/features/search/components/SearchModal';
 import SearchProvider from '@/features/search/context/SearchProvider';
@@ -90,6 +91,7 @@ export default function StorefrontRoutes() {
             <Route path="/shop" element={<ShopPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/wishlist" element={<WishlistPage />} />
             <Route path="/the-craft" element={<TheCraftPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />

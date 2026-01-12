@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/user';
 import { useCartDomainStore } from '@/stores/cart';
 import { useCheckoutDomainStore, useCheckoutUIStore } from '@/stores/checkout';
+import { useWishlistDomainStore } from '@/stores/wishlist';
 
 import useNotificationsSSE from '@/features/notifications/hooks/useNotificationsSSE';
 
@@ -17,12 +18,16 @@ export default function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const hydrateCart = useCartDomainStore((s) => s.hydrate);
-  const mergeOnLogin = useCartDomainStore((s) => s.mergeOnLogin);
-  const resetToGuest = useCartDomainStore((s) => s.resetToGuest);
+  const mergeCartOnLogin = useCartDomainStore((s) => s.mergeOnLogin);
+  const resetCartToGuest = useCartDomainStore((s) => s.resetToGuest);
 
   const hydrateCheckout = useCheckoutDomainStore((s) => s.hydrate);
   const resetCheckoutDomain = useCheckoutDomainStore((s) => s.reset);
   const resetCheckoutUI = useCheckoutUIStore((s) => s.reset);
+
+  const hydrateWishlist = useWishlistDomainStore((s) => s.hydrate);
+  const mergeWishlistOnLogin = useWishlistDomainStore((s) => s.mergeOnLogin);
+  const resetWishlistToGuest = useWishlistDomainStore((s) => s.resetToGuest);
 
   useEffect(() => {
     hydrateSession();
@@ -32,23 +37,28 @@ export default function App() {
     if (!authHydrated) return;
     hydrateCart();
     hydrateCheckout();
-  }, [authHydrated, hydrateCart, hydrateCheckout]);
+    hydrateWishlist();
+  }, [authHydrated, hydrateCart, hydrateCheckout, hydrateWishlist]);
 
   useEffect(() => {
     if (!authHydrated) return;
 
     if (isAuthenticated) {
-      mergeOnLogin();
+      mergeCartOnLogin();
+      mergeWishlistOnLogin();
     } else {
-      resetToGuest();
+      resetCartToGuest();
+      resetWishlistToGuest();
       resetCheckoutDomain();
       resetCheckoutUI();
     }
   }, [
     authHydrated,
     isAuthenticated,
-    mergeOnLogin,
-    resetToGuest,
+    mergeCartOnLogin,
+    mergeWishlistOnLogin,
+    resetCartToGuest,
+    resetWishlistToGuest,
     resetCheckoutDomain,
     resetCheckoutUI,
   ]);

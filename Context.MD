@@ -19,7 +19,8 @@ The platform is architected as an **enterprise-grade, modular system** with:
 - production-safe routing and state isolation
 - operational readiness for scale
 
-The project is currently in a **backend-complete + frontend domain-stabilized phase**, with all **core commerce flows hardened, refactored, and verified**.
+The project is currently in a **backend-complete + frontend domain-stabilized phase**.  
+All **core commerce flows are implemented and architecturally correct**, with remaining work focused on **UX polish, testing, SEO, and admin completeness** rather than core logic.
 
 ---
 
@@ -34,7 +35,7 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
   - hydration only where architecturally justified
 - **UI System:** shadcn/ui
 - **Routing:** React Router (hydration-aware, guarded)
-- **Data Access:** Fetch / Axios (feature-scoped; consolidation pending)
+- **Data Access:** Axios (feature-scoped; consolidation pending)
 - **UX Feedback:** Toast-based, non-blocking
 - **Checkout Pattern:** Step-based deterministic state machine
 
@@ -57,27 +58,27 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 | Feature / Module                 | Frontend Status | Backend Status | Notes                                                  |
 | -------------------------------- | --------------- | -------------- | ------------------------------------------------------ |
 | Auth (Login / Signup / Sessions) | ✅ Complete     | ✅ Complete    | Hydration-safe, remember-me, refresh-safe              |
-| Users / Profile                  | ✅ Stable       | ✅ Complete    | Profile UI complete, orders removed                    |
-| Products / Shop (PLP)            | ✅ Complete     | ✅ Complete    | Domain + UI stores finalized, page-scoped loading      |
-| Product Detail Page (PDP)        | ✅ Complete     | ✅ Complete    | Store-driven, cached entities, cart-safe               |
+| Users / Profile                  | ✅ Stable       | ✅ Complete    | Profile UI stable                                      |
+| Products / Shop (PLP)            | ✅ Complete     | ✅ Complete    | Domain + UI stores finalized                           |
+| Product Detail Page (PDP)        | ✅ Complete     | ✅ Complete    | Store-driven, cached entities                          |
 | Cart (Guest + Auth)              | ✅ Complete     | ✅ Complete    | Guest persistence + merge-on-login                     |
 | Mini Cart / Cart Badge           | ✅ Stable       | N/A            | Fully synced                                           |
 | Checkout (State Machine)         | ✅ Complete     | ✅ Complete    | Domain + UI stores finalized                           |
-| Orders                           | ✅ Complete     | ✅ Complete    | Domain + UI stores finalized                           |
-| Payments                         | ✅ Stable       | ✅ Complete    | Webhook-authoritative                                  |
-| Webhooks                         | ❌ UI           | ✅ Complete    | Production-safe                                        |
+| Orders                           | ✅ Complete     | ✅ Complete    | Server-authoritative lifecycle                         |
+| Payments                         | ✅ Stable       | ✅ Complete    | Webhook-authoritative; dev requires webhook simulation |
+| Webhooks                         | ❌ UI           | ✅ Complete    | Stripe + Razorpay implemented, signature verified      |
 | Notifications (In-App)           | ✅ Complete     | ✅ Complete    | SSE + pagination + read state                          |
 | Notifications (Email)            | ❌ UI           | ✅ Complete    | Rule-based                                             |
-| Invoices (HTML + PDF)            | ⚙️ Partial UI   | ✅ Complete    | Download via Orders UI                                 |
+| Invoices (HTML + PDF)            | ⚙️ Partial UI   | ✅ Complete    | Download wired via Orders UI                           |
 | Refunds                          | ❌ UI           | ✅ Complete    | Admin-only                                             |
-| Admin Dashboard                  | ⚙️ Partial UI   | ✅ Complete    | Frontend incomplete                                    |
-| Categories / Filters             | ⚙️ Basic        | ⚙️ Partial     | Shop-level filtering stable, advanced faceting pending |
+| Admin Dashboard                  | ⚙️ Partial UI   | ✅ Complete    | Backend complete, frontend pending                     |
+| Categories / Filters             | ⚙️ Basic        | ⚙️ Partial     | Advanced faceting pending                              |
 | Coupons / Discounts              | ❌ Not Started  | ❌ Not Started | —                                                      |
-| Reviews                          | ⚙️ UI Only      | ❌ Not Started | APIs missing                                           |
-| Wishlist                         | ⚙️ Local        | ❌ Not Started | Backend pending                                        |
+| Reviews                          | ⚙️ UI + API     | ✅ Complete    | Verified-purchase enforced; UI polish pending          |
+| Wishlist                         | ⚙️ Local        | ✅ Complete    | Backend implemented; FE sync pending                   |
 | Uploads / Assets                 | ❌ Not Started  | ❌ Not Started | —                                                      |
-| API Client Unification           | ⚙️ Partial      | ✅ Complete    | FE consolidation pending                               |
-| Error Handling                   | ⚙️ Partial      | ✅ Complete    | FE boundaries pending                                  |
+| API Client Unification           | ⚙️ Partial      | ✅ Complete    | Frontend consolidation pending                         |
+| Error Handling                   | ⚙️ Partial      | ✅ Complete    | FE error boundaries pending                            |
 | Performance                      | ⚙️ Partial      | ⚙️ Partial     | FE optimizations pending                               |
 | Testing / QA                     | ❌ Not Started  | ⚙️ Partial     | No FE tests                                            |
 | Accessibility & SEO              | ❌ Not Started  | N/A            | —                                                      |
@@ -108,10 +109,12 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 3. Shipping address selection
 4. Shipping method selection
 5. Pricing finalized (shipping + tax)
-6. Order locked → `priced`
-7. Payment prepared → `payment_pending`
+6. Order created in `pending` state
+7. Payment initiated
 8. **Payment confirmed ONLY via webhook**
-9. Order marked paid, stock reduced, cart cleared
+9. Order marked `paid`, stock reduced, cart cleared
+
+> In local/dev environments, webhook simulation or tunneling is required for orders to transition to `paid`.
 
 ---
 
@@ -146,19 +149,18 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 
 - Orders domain store finalized
 - Orders UI store finalized
-- Orders page fully wired
-- Order details drawer wired correctly
-- Invoice download routed through services layer
-- Backend response shape handled defensively
+- Orders list and detail views wired
+- Invoice download wired via services layer
+- Defensive handling of backend response shapes
 - Orders UI removed from User Profile (single source of truth)
 - No regressions
 
 ### Orders Backend (Stable)
 
 - Server-authoritative order lifecycle
-- Status normalization
-- Invoice generation
-- Payment-linked transitions
+- Draft → pending → paid / failed transitions
+- Webhook-driven payment confirmation
+- Invoice generation (HTML + PDF)
 - Idempotent updates
 
 ---
@@ -170,11 +172,10 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 - Products **domain store** finalized
 - Products **UI store** finalized
 - Normalized product entities with ID mapping
-- Page-scoped fetching (Shop & Product pages only)
+- Page-scoped fetching only
 - Centralized caching with reuse across navigation
-- Filters, sorting, pagination fully store-driven
+- Filters, sorting, pagination store-driven
 - No App-level hydration
-- No UI or behavior changes
 - No regressions
 
 ### Products Backend (Stable)
@@ -183,6 +184,25 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 - Server-side validation
 - Consistent response envelopes
 - Defensive error handling
+
+---
+
+## ⭐ Reviews System (Current State)
+
+### Backend (Complete)
+
+- Review CRUD APIs implemented
+- Verified-purchase enforcement via orders
+- Rating aggregation and stats materialized
+- Moderation hooks in place
+- Server-authoritative validation
+
+### Frontend (Functional, Needs Polish)
+
+- Reviews list, summary, and breakdown wired
+- Write-review modal implemented
+- Zustand-backed domain + UI state
+- UX polish and visual hierarchy pending
 
 ---
 
@@ -214,6 +234,7 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 - Signature verification enforced
 - Duplicate webhook safety implemented
 - Stock decrement and cart clearing executed once
+- Local/dev requires webhook simulation or tunneling
 
 ---
 
@@ -226,13 +247,15 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 - Checkout domain & UI
 - Orders frontend & backend
 - Products frontend & backend
-- Payments & webhooks
+- Payments & webhooks (production)
 - Notifications (in-app & email)
 - Invoice generation
 - Protected routing & refresh behavior
+- Reviews backend logic
 
 ### Needs Frontend Work
 
+- Reviews UX polish
 - Admin UI completeness
 - API client consolidation
 - Error boundary coverage
@@ -249,7 +272,7 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 ## 🧭 Overall Project Health
 
 - **Status:** 🟢 Core commerce flows production-safe
-- **Execution Progress:** ~97%
+- **Execution Progress:** ~95%
 - **Architecture Quality:** ⭐⭐⭐⭐⭐ (commerce core)
 
 ### Primary Remaining Risks
@@ -257,17 +280,19 @@ The project is currently in a **backend-complete + frontend domain-stabilized ph
 - Frontend testing gap
 - Admin UX completeness
 - SEO & accessibility
+- Local/dev payment realism (webhooks)
 
 ---
 
 ## 📍 Next Planned Phase
 
-### 👉 Admin Frontend Completion / Frontend Testing (To Be Chosen)
+### 👉 One of the following (to be chosen):
 
-- Complete Admin UI workflows
-- Introduce frontend test coverage (unit + integration)
-- Error boundary hardening
-- Performance optimizations
+- Reviews UI/UX polish
+- Payments dev tooling (webhook simulation)
+- Admin frontend completion
+- Frontend testing & error boundaries
+- SEO & performance optimization
 
 ---
 

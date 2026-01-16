@@ -4,6 +4,8 @@ import { loginUser, signupUser } from '@/features/user/services/userApi';
 import { disconnectNotificationsSSE } from '@/features/notifications/services/notificationsSse';
 import { useUserDomainStore } from './user.store';
 
+let loginRequestId = 0;
+
 const getAuthStorage = () => {
   if (localStorage.getItem('token')) return localStorage;
   if (sessionStorage.getItem('token')) return sessionStorage;
@@ -17,7 +19,7 @@ const clearAuthStorage = () => {
   sessionStorage.removeItem('user');
 };
 
-export const useAuthStore = create((set, get) => ({
+export const useAuthStore = create((set) => ({
   loading: false,
   error: '',
   hydrated: false,
@@ -42,11 +44,15 @@ export const useAuthStore = create((set, get) => ({
   },
 
   login: async ({ email, password, rememberMe }) => {
+    const requestId = ++loginRequestId;
     set({ loading: true, error: '' });
 
     try {
       clearAuthStorage();
       const data = await loginUser({ email, password });
+
+      if (requestId !== loginRequestId) return;
+      if (!data?.token || !data?.user) return;
 
       const storage = rememberMe ? localStorage : sessionStorage;
       storage.setItem('token', data.token);
@@ -54,9 +60,13 @@ export const useAuthStore = create((set, get) => ({
 
       useUserDomainStore.getState().setUser(data.user);
     } catch (err) {
-      set({ error: err?.response?.data?.message || 'Login failed' });
+      if (requestId === loginRequestId) {
+        set({ error: err?.response?.data?.message || 'Login failed' });
+      }
     } finally {
-      set({ loading: false });
+      if (requestId === loginRequestId) {
+        set({ loading: false });
+      }
     }
   },
 
@@ -66,6 +76,8 @@ export const useAuthStore = create((set, get) => ({
     try {
       clearAuthStorage();
       const data = await signupUser(payload);
+
+      if (!data?.token || !data?.user) return;
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -79,6 +91,7 @@ export const useAuthStore = create((set, get) => ({
   },
 
   logout: () => {
+    loginRequestId++;
     disconnectNotificationsSSE();
     clearAuthStorage();
     useUserDomainStore.getState().resetUser();

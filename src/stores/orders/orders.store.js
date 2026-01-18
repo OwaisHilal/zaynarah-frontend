@@ -4,7 +4,7 @@ import { fetchMyOrders } from '@/features/orders/services/ordersApi';
 
 const normalizeStatus = (status) => {
   if (!status) return 'placed';
-  return status.toLowerCase();
+  return String(status).toLowerCase();
 };
 
 const extractOrdersArray = (response) => {
@@ -21,11 +21,19 @@ export const useOrdersDomainStore = create((set, get) => ({
   limit: 10,
   hasMore: false,
   hydrated: false,
+  _hydrating: false,
 
   hydrate: async () => {
-    if (get().hydrated) return;
-    await get().fetchPage(1);
-    set({ hydrated: true });
+    if (get().hydrated || get()._hydrating) return;
+
+    set({ _hydrating: true });
+
+    try {
+      await get().fetchPage(1);
+      set({ hydrated: true });
+    } finally {
+      set({ _hydrating: false });
+    }
   },
 
   fetchPage: async (page) => {
@@ -34,10 +42,10 @@ export const useOrdersDomainStore = create((set, get) => ({
     const orders = extractOrdersArray(response);
 
     const entities = {};
-    const ids = [];
+    const idsSet = new Set();
 
     for (const o of orders) {
-      const id = o._id || o.id;
+      const id = o?._id || o?.id;
       if (!id) continue;
 
       entities[id] = {
@@ -46,12 +54,12 @@ export const useOrdersDomainStore = create((set, get) => ({
         status: normalizeStatus(o.status),
       };
 
-      ids.push(id);
+      idsSet.add(id);
     }
 
     set({
       entities,
-      ids,
+      ids: Array.from(idsSet),
       page,
       hasMore: orders.length === limit,
     });

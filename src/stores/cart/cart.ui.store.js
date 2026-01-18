@@ -1,7 +1,7 @@
 // src/stores/cart/cart.ui.store.js
 import { create } from 'zustand';
 
-export const useCartUIStore = create((set) => ({
+export const useCartUIStore = create((set, get) => ({
   updatingIds: [],
 
   startUpdating(id) {

@@ -45,4 +45,32 @@ export const handlers = [
       emailVerified: true,
     })
   ),
+
+  http.get('*/notifications', ({ request }) => {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get('page')) || 1;
+    const limit = Number(url.searchParams.get('limit')) || 20;
+
+    const count = page === 1 ? limit : 5;
+
+    return HttpResponse.json(
+      Array.from({ length: count }, (_, i) => ({
+        _id: `n-${page}-${i}`,
+        message: 'notification',
+        readAt: null,
+      }))
+    );
+  }),
+
+  http.get('*/notifications/unread-count', () =>
+    HttpResponse.json({ count: 3 })
+  ),
+
+  http.post('*/notifications/:id/read', () =>
+    HttpResponse.json({ success: true })
+  ),
+
+  http.post('*/notifications/read-all', () =>
+    HttpResponse.json({ success: true })
+  ),
 ];

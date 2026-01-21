@@ -1,3 +1,4 @@
+//src\features\admin\routes\AdminRoutes.jsx
 import { Route, Routes, Navigate } from 'react-router-dom';
 import AdminLayout from '../layout/AdminLayout';
 import useAdminGuard from '../hooks/useAdminGuard';

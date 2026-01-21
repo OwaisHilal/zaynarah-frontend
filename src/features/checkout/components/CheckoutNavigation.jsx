@@ -14,7 +14,14 @@ export default function CheckoutNavigation({
   return (
     <div className="mt-6 flex justify-between gap-4">
       {currentStep > 1 ? (
-        <Button variant="outline" onClick={onBack}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={(e) => {
+            e.stopPropagation();
+            onBack();
+          }}
+        >
           Back
         </Button>
       ) : (
@@ -23,17 +30,25 @@ export default function CheckoutNavigation({
 
       {currentStep < totalSteps ? (
         <Button
+          type="button"
           className="bg-rose-600 hover:bg-rose-700 text-white"
           disabled={loading}
-          onClick={onNext}
+          onClick={(e) => {
+            e.stopPropagation();
+            onNext();
+          }}
         >
           {loading ? 'Processing…' : 'Next'}
         </Button>
       ) : (
         <Button
+          type="button"
           className="bg-rose-600 hover:bg-rose-700 text-white"
           disabled={loading}
-          onClick={onPlaceOrder}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPlaceOrder();
+          }}
         >
           {loading ? 'Processing…' : 'Place Order'}
         </Button>

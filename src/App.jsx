@@ -2,7 +2,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { useEffect } from 'react';
 
-import { useAuthStore } from '@/stores/user';
+import { useAuthStore, useUserDomainStore } from '@/stores/user';
 import { useCartDomainStore } from '@/stores/cart';
 import { useCheckoutDomainStore, useCheckoutUIStore } from '@/stores/checkout';
 import { useWishlistDomainStore } from '@/stores/wishlist';
@@ -15,7 +15,9 @@ import StorefrontRoutes from './routes/storefront/StorefrontRoutes';
 export default function App() {
   const hydrateSession = useAuthStore((s) => s.hydrateSession);
   const authHydrated = useAuthStore((s) => s.hydrated);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  const user = useUserDomainStore((s) => s.user);
+  const isAuthenticated = !!user;
 
   const hydrateCart = useCartDomainStore((s) => s.hydrate);
   const mergeCartOnLogin = useCartDomainStore((s) => s.mergeOnLogin);
@@ -23,6 +25,8 @@ export default function App() {
 
   const hydrateCheckout = useCheckoutDomainStore((s) => s.hydrate);
   const resetCheckoutDomain = useCheckoutDomainStore((s) => s.reset);
+  const checkoutSessionId = useCheckoutDomainStore((s) => s.checkoutSessionId);
+
   const resetCheckoutUI = useCheckoutUIStore((s) => s.reset);
 
   const hydrateWishlist = useWishlistDomainStore((s) => s.hydrate);
@@ -43,18 +47,22 @@ export default function App() {
   useEffect(() => {
     if (!authHydrated) return;
 
+    if (checkoutSessionId) return;
+
     if (isAuthenticated) {
       mergeCartOnLogin();
       mergeWishlistOnLogin();
-    } else {
-      resetCartToGuest();
-      resetWishlistToGuest();
-      resetCheckoutDomain();
-      resetCheckoutUI();
+      return;
     }
+
+    resetCartToGuest();
+    resetWishlistToGuest();
+    resetCheckoutDomain();
+    resetCheckoutUI();
   }, [
     authHydrated,
     isAuthenticated,
+    checkoutSessionId,
     mergeCartOnLogin,
     mergeWishlistOnLogin,
     resetCartToGuest,

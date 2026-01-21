@@ -7,7 +7,7 @@ import {
   createRazorpayOrderAPI,
   getShippingMethods,
 } from '@/features/checkout/services/useCheckoutApi';
-import { startPayment } from '@/features/checkout/hooks/usePaymentHandler';
+import { startPayment as startGatewayPayment } from '@/features/checkout/hooks/usePaymentHandler';
 
 const STORAGE_KEY = 'checkout_domain_v1';
 
@@ -53,7 +53,7 @@ export const useCheckoutDomainStore = create((set, get) => ({
         shippingMethod,
         paymentMethod,
         paymentDetails,
-      })
+      }),
     );
   },
 
@@ -143,11 +143,12 @@ export const useCheckoutDomainStore = create((set, get) => ({
 
     if (paymentMethod === 'stripe') {
       const session = await createStripeSessionAPI(orderId);
-      await startPayment('stripe', session);
-    } else {
-      const rp = await createRazorpayOrderAPI(orderId);
-      await startPayment('razorpay', rp);
+      await startGatewayPayment('stripe', session);
+      return;
     }
+
+    const rp = await createRazorpayOrderAPI(orderId);
+    await startGatewayPayment('razorpay', rp);
   },
 
   reset() {

@@ -23,6 +23,7 @@ export const useAuthStore = create((set) => ({
   loading: false,
   error: '',
   hydrated: false,
+  isAuthenticated: false,
 
   hydrateSession: () => {
     const storage = getAuthStorage();
@@ -32,15 +33,12 @@ export const useAuthStore = create((set) => ({
         const user = JSON.parse(storage.getItem('user'));
         if (user) {
           useUserDomainStore.getState().setUser(user);
+          set({ isAuthenticated: true });
         }
       }
     } catch {}
 
     set({ hydrated: true });
-  },
-
-  isAuthenticated: () => {
-    return !!useUserDomainStore.getState().user;
   },
 
   login: async ({ email, password, rememberMe }) => {
@@ -59,6 +57,7 @@ export const useAuthStore = create((set) => ({
       storage.setItem('user', JSON.stringify(data.user));
 
       useUserDomainStore.getState().setUser(data.user);
+      set({ isAuthenticated: true });
     } catch (err) {
       if (requestId === loginRequestId) {
         set({ error: err?.response?.data?.message || 'Login failed' });
@@ -83,6 +82,7 @@ export const useAuthStore = create((set) => ({
       localStorage.setItem('user', JSON.stringify(data.user));
 
       useUserDomainStore.getState().setUser(data.user);
+      set({ isAuthenticated: true });
     } catch (err) {
       set({ error: err?.response?.data?.message || 'Signup failed' });
     } finally {
@@ -95,6 +95,6 @@ export const useAuthStore = create((set) => ({
     disconnectNotificationsSSE();
     clearAuthStorage();
     useUserDomainStore.getState().resetUser();
-    set({ loading: false, error: '', hydrated: true });
+    set({ loading: false, error: '', hydrated: true, isAuthenticated: false });
   },
 }));

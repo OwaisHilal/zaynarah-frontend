@@ -23,6 +23,7 @@ import { useAuthStore, useUserDomainStore } from '@/stores/user';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 
 function AuthBlockingShell() {
+  console.log('[AuthBlockingShell] rendering');
   return (
     <div className="min-h-[60vh] flex items-center justify-center text-sm text-muted-foreground">
       Loading…
@@ -32,12 +33,24 @@ function AuthBlockingShell() {
 
 function ProtectedRoute({ children }) {
   const hydrated = useAuthStore((s) => s.hydrated);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const location = useLocation();
 
-  if (!hydrated) return <AuthBlockingShell />;
+  console.log('[ProtectedRoute] render', {
+    hydrated,
+    isAuthenticated,
+    path: location.pathname,
+  });
+
+  if (!hydrated) {
+    console.log('[ProtectedRoute] blocked: not hydrated');
+    return <AuthBlockingShell />;
+  }
 
   if (!isAuthenticated) {
+    console.log('[ProtectedRoute] redirecting to /login', {
+      from: location.pathname,
+    });
     return (
       <Navigate
         to={`/login?from=${encodeURIComponent(location.pathname)}`}
@@ -46,20 +59,34 @@ function ProtectedRoute({ children }) {
     );
   }
 
+  console.log('[ProtectedRoute] allowed', location.pathname);
   return children;
 }
 
 function VerifiedRoute({ children }) {
   const hydrated = useAuthStore((s) => s.hydrated);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const needsEmailVerification = useUserDomainStore((s) =>
-    s.needsEmailVerification()
+    s.needsEmailVerification(),
   );
   const location = useLocation();
 
-  if (!hydrated) return <AuthBlockingShell />;
+  console.log('[VerifiedRoute] render', {
+    hydrated,
+    isAuthenticated,
+    needsEmailVerification,
+    path: location.pathname,
+  });
+
+  if (!hydrated) {
+    console.log('[VerifiedRoute] blocked: not hydrated');
+    return <AuthBlockingShell />;
+  }
 
   if (!isAuthenticated) {
+    console.log('[VerifiedRoute] redirecting to /login', {
+      from: location.pathname,
+    });
     return (
       <Navigate
         to={`/login?from=${encodeURIComponent(location.pathname)}`}
@@ -69,6 +96,9 @@ function VerifiedRoute({ children }) {
   }
 
   if (needsEmailVerification) {
+    console.log('[VerifiedRoute] redirecting to /verify-email', {
+      from: location.pathname,
+    });
     return (
       <Navigate
         to={`/verify-email?from=${encodeURIComponent(location.pathname)}`}
@@ -77,10 +107,13 @@ function VerifiedRoute({ children }) {
     );
   }
 
+  console.log('[VerifiedRoute] allowed', location.pathname);
   return children;
 }
 
 export default function StorefrontRoutes() {
+  console.log('[StorefrontRoutes] render');
+
   return (
     <ToastProvider>
       <SearchProvider>

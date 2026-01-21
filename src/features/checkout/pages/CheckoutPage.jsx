@@ -66,6 +66,8 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    if (loading) return;
+
     if (!isAuthenticated) {
       navigate('/login?from=/checkout', { replace: true });
       return;
@@ -79,10 +81,8 @@ export default function CheckoutPage() {
     try {
       setLoading(true);
       await startPayment();
-      navigate('/checkout/success');
     } catch (e) {
       setError(e.message || 'Order failed.');
-    } finally {
       setLoading(false);
     }
   };
